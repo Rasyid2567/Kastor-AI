@@ -1,0 +1,15 @@
+{
+  "name": "aras-web-dashboard",
+  "version": "1.0.0",
+  "description": "Kastor AI / ARAS 1.0 Web Dashboard Backend & Frontend",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "bun server.js",
+    "start:bun": "bun server.js",
+    "start:deno": "deno run --allow-all server.js",
+    "test": "bun test/web-tests.js",
+    "test:bun": "bun test/web-tests.js",
+    "test:deno": "deno run --allow-all test/web-tests.js"
+  }
+}

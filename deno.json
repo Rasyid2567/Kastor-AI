@@ -1,0 +1,13 @@
+{
+  "$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
+  "tasks": {
+    "setup": "deno eval \"try { Deno.statSync('.env'); } catch { Deno.copyFileSync('.env.example', '.env'); console.log('✅ Template .env siap.'); }\" && deno task seed",
+    "start": "deno run --allow-all bot/index.js",
+    "seed": "deno run --allow-all database/seed.js",
+    "test": "deno run --allow-all bot/test/run-tests.js",
+    "web": "deno run --allow-all web/server.js",
+    "test:web": "deno run --allow-all web/test/web-tests.js",
+    "test:e2e": "deno run --allow-all web/test/responsive-e2e.js"
+  },
+  "nodeModulesDir": "auto"
+}

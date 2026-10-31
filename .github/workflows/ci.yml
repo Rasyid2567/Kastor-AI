@@ -1,0 +1,37 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Run Test Suites
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Create Environment Template
+        run: |
+          cp .env.example .env
+
+      - name: Run WhatsApp Bot Test Suite
+        run: |
+          deno task test
+
+      - name: Run Web Dashboard RBAC & Security Test Suite
+        run: |
+          deno task test:web
+
+      - name: Run Responsive E2E Test Suite
+        run: |
+          deno run --allow-all web/test/responsive-e2e.js
