@@ -49,7 +49,7 @@ Sistem ini menggabungkan **Bot WhatsApp Multi-Grup** berbasis socket Baileys den
 Dashboard administrasi kelas dibangun menggunakan antarmuka murni **Vanilla ES6 Modules** tanpa overhead bundler eksternal, mengusung palet warna **Midnight Slate Dark Theme** yang elegan dan responsif di peramban desktop maupun ponsel pintar:
 
 <p align="center">
-  <img src="assets/dashboard-preview.svg" alt="Pratinjau Web Dashboard ARAS 1.0" width="100%">
+  <img src="assets/dashboard-preview.png" alt="Pratinjau Web Dashboard ARAS 1.0" width="100%">
 </p>
 
 ---
@@ -247,35 +247,53 @@ git clone https://github.com/Rasyid2567/Kastor-AI.git
 cd Kastor-AI
 ```
 
-### 2. Penyiapan Otomatis (1 Perintah)
-Jalankan salah satu script inisialisasi berikut sesuai runtime pilihan Anda:
+### 2. Pasang Dependensi & Penyiapan Awal (1 Perintah)
+Pilih runtime yang terpasang di sistem Anda (Node.js, Deno, atau Bun):
 
+#### Opsi A — Menggunakan Node.js (v20+ LTS / v22+):
 ```bash
-# Menggunakan Deno (Sangat Disarankan):
-deno task setup
-
-# Atau menggunakan Bun:
-bun run setup
-
-# Atau menggunakan Node.js:
+npm install
 npm run setup
 ```
-Perintah ini akan menyalin `.env.example` ke `.env` dan mengisi basis data contoh awal.
+
+#### Opsi B — Menggunakan Deno (v2.x):
+```bash
+deno task setup
+```
+
+#### Opsi C — Menggunakan Bun (v1.x):
+```bash
+bun install
+bun run setup
+```
+*Perintah di atas akan menyalin template `.env.example` ke `.env` serta menginisialisasi skema basis data SQLite awal.*
 
 ### 3. Jalankan Aplikasi
 Buka 2 tab terminal untuk menjalankan WhatsApp Bot dan Web Dashboard:
 
 #### Terminal 1 — WhatsApp Bot Socket Engine:
 ```bash
+# Node.js:
+npm start
+
+# Deno:
 deno task start
-# atau: bun start / npm start
+
+# Bun:
+bun start
 ```
 *Pindai (scan) kode QR yang tampil di terminal menggunakan akun WhatsApp bot Anda.*
 
 #### Terminal 2 — Web Administration Dashboard:
 ```bash
+# Node.js:
+npm run web
+
+# Deno:
 deno task web
-# atau: bun run web / npm run web:node
+
+# Bun:
+bun run web
 ```
 *Buka peramban di `http://localhost:3001` untuk mengakses dashboard administrasi.*
 
@@ -311,7 +329,10 @@ After=network.target
 Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/Kastor-AI
-ExecStart=/usr/local/bin/deno run --allow-all bot/index.js
+# Opsi 1 (Node.js):
+ExecStart=/usr/bin/node bot/index.js
+# Opsi 2 (Deno):
+# ExecStart=/usr/local/bin/deno run --allow-all bot/index.js
 Restart=always
 RestartSec=5
 Environment=PATH=/usr/bin:/usr/local/bin
@@ -330,7 +351,10 @@ After=network.target
 Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/Kastor-AI
-ExecStart=/usr/local/bin/deno run --allow-all web/server.js
+# Opsi 1 (Node.js):
+ExecStart=/usr/bin/node web/server.js
+# Opsi 2 (Deno):
+# ExecStart=/usr/local/bin/deno run --allow-all web/server.js
 Restart=always
 RestartSec=5
 
@@ -351,14 +375,27 @@ sudo systemctl status kastor-ai kastor-web
 
 Repositori ini menyertakan suite pengujian otomatis mandiri yang dapat dijalankan secara lokal maupun di lingkungan Continuous Integration (CI) tanpa membocorkan data pribadi siswa:
 
+### Pengujian dengan Node.js (NPM):
+```bash
+# 1. Uji logika WhatsApp Bot & format ketat PRD
+npm test
+
+# 2. Uji 145 skenario Web Dashboard (RBAC, SQLi, XSS, Sesi HttpOnly, Isolasi IDOR)
+npm run test:web
+
+# 3. Uji Responsivitas & E2E Viewport (360px - 1280px)
+npm run test:e2e
+```
+
+### Atau Pengujian dengan Deno:
 ```bash
 # 1. Uji logika WhatsApp Bot & format ketat PRD
 deno task test
 
-# 2. Uji 145 skenario Web Dashboard (RBAC, SQLi, XSS, Sesi HttpOnly, Isolasi IDOR)
+# 2. Uji 145 skenario Web Dashboard
 deno task test:web
 
-# 3. Uji Responsivitas & E2E Viewport (360px - 1280px)
+# 3. Uji Responsivitas & E2E Viewport
 deno task test:e2e
 ```
 

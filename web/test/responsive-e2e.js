@@ -34,20 +34,6 @@ const projectRoot = path.resolve(__dirname, '../..');
 const prodDbPath = path.join(projectRoot, 'database.sqlite');
 const tempDbPath = `/tmp/aras_e2e_test_${process.pid}.sqlite`;
 
-// Fallback jika dieksekusi via Node pada workspace yang dibuild dengan Deno/Bun
-if (typeof process !== 'undefined' && !process.versions?.bun) {
-  try {
-    const { default: Database } = await import('better-sqlite3');
-    new Database(':memory:').close();
-  } catch (err) {
-    const res = spawnSync('bun', [__filename, ...process.argv.slice(2)], {
-      stdio: 'inherit',
-      env: process.env
-    });
-    process.exit(res.status ?? 0);
-  }
-}
-
 // ----------------------------------------------------------------------------
 // CLI ARGUMENTS PARSER
 // ----------------------------------------------------------------------------

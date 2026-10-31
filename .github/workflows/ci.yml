@@ -7,8 +7,40 @@ on:
     branches: [ main, master ]
 
 jobs:
-  test:
-    name: Run Test Suites
+  test-node:
+    name: Node.js (${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Create Environment Template
+        run: cp .env.example .env
+
+      - name: Run WhatsApp Bot Test Suite
+        run: npm test
+
+      - name: Run Web Dashboard RBAC & Security Test Suite
+        run: npm run test:web
+
+      - name: Run Responsive E2E Test Suite
+        run: npm run test:e2e
+
+  test-deno:
+    name: Deno (v2.x)
     runs-on: ubuntu-latest
 
     steps:
@@ -21,17 +53,13 @@ jobs:
           deno-version: v2.x
 
       - name: Create Environment Template
-        run: |
-          cp .env.example .env
+        run: cp .env.example .env
 
       - name: Run WhatsApp Bot Test Suite
-        run: |
-          deno task test
+        run: deno task test
 
       - name: Run Web Dashboard RBAC & Security Test Suite
-        run: |
-          deno task test:web
+        run: deno task test:web
 
       - name: Run Responsive E2E Test Suite
-        run: |
-          deno run --allow-all web/test/responsive-e2e.js
+        run: deno task test:e2e

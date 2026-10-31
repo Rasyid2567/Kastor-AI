@@ -23,19 +23,26 @@ if (typeof Deno !== 'undefined') {
   dbInstance.exec('PRAGMA journal_mode = WAL;');
   dbInstance.exec('PRAGMA foreign_keys = ON;');
 } else {
-  // Node.js: menggunakan better-sqlite3 atau fallback node:sqlite
+  // Node.js: menggunakan better-sqlite3 atau fallback node:sqlite (Node >= 22.5.0)
   try {
     const { default: Database } = await import('better-sqlite3');
     dbInstance = new Database(dbPath);
-    dbInstance.pragma('busy_timeout = 5000');
-    dbInstance.pragma('journal_mode = WAL');
-    dbInstance.pragma('foreign_keys = ON');
-  } catch (_) {
-    const { DatabaseSync } = await import('node:sqlite');
-    dbInstance = new DatabaseSync(dbPath);
     dbInstance.exec('PRAGMA busy_timeout = 5000;');
     dbInstance.exec('PRAGMA journal_mode = WAL;');
     dbInstance.exec('PRAGMA foreign_keys = ON;');
+  } catch (err) {
+    try {
+      const { DatabaseSync } = await import('node:sqlite');
+      dbInstance = new DatabaseSync(dbPath);
+      dbInstance.exec('PRAGMA busy_timeout = 5000;');
+      dbInstance.exec('PRAGMA journal_mode = WAL;');
+      dbInstance.exec('PRAGMA foreign_keys = ON;');
+    } catch (_) {
+      console.error('\n[FATAL] Gagal menginisialisasi SQLite driver pada runtime Node.js!');
+      console.error('Silakan jalankan `npm install` untuk mengompilasi driver better-sqlite3,');
+      console.error('atau gunakan Node.js versi 22.5.0+ dengan flag --experimental-sqlite.\n');
+      throw err;
+    }
   }
 }
 

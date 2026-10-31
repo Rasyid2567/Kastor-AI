@@ -25,37 +25,45 @@ Alat tambahan opsional:
    cd Kastor-AI
    ```
 
-2. **Inisialisasi Konfigurasi & Database Dummy**
-   Jalankan script penyiapan otomatis:
+2. **Pasang Dependensi & Penyiapan Awal**
+   Jalankan script penyiapan otomatis sesuai runtime pilihan Anda:
    ```bash
-   # Menggunakan Deno:
+   # Menggunakan Node.js:
+   npm install
+   npm run setup
+
+   # Atau menggunakan Deno:
    deno task setup
 
-   # Atau menggunakan Node.js / Bun:
-   npm run setup
+   # Atau menggunakan Bun:
+   bun install && bun run setup
    ```
    Perintah ini akan menyalin `.env.example` ke `.env` dan mengisi database contoh awal.
 
 3. **Menjalankan Pengujian Lokal**
-   Pastikan seluruh test suite lulus sebelum membuat perubahan:
+   Pastikan seluruh test suite lulus sebelum dan sesudah membuat perubahan:
    ```bash
-   # Menguji logika WhatsApp Bot:
-   deno task test
+   # Menggunakan Node.js (NPM):
+   npm test
+   npm run test:web
+   npm run test:e2e
 
-   # Menguji Web Dashboard (RBAC, API, Keamanan, UI):
+   # Atau menggunakan Deno:
+   deno task test
    deno task test:web
+   deno task test:e2e
    ```
 
 4. **Menjalankan Bot dan Web Dashboard**
    - **WhatsApp Bot**:
      ```bash
-     deno task start
-     # atau: bun start / npm start
+     npm start
+     # atau: deno task start / bun start
      ```
    - **Web Dashboard**:
      ```bash
-     deno task web
-     # atau: bun run web / npm run web:node
+     npm run web
+     # atau: deno task web / bun run web
      ```
      Buka browser pada `http://localhost:3001`.
 
