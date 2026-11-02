@@ -199,65 +199,77 @@ export function getOrganizationStructure(groupId) {
 }
 
 /**
- * /struktur set [jabatan] [nama] [tag nomor]
+ * /struktur set [jabatan] | [nama] | [tag nomor]
  */
 export function setOrganizationPosition(groupId, argsText, mentionedJids = []) {
   groupId = resolveClassGroupId(groupId);
   if (!argsText) {
     return {
-      text: `⚠️ Format salah!\nGunakan: \`/struktur set [jabatan] [nama] [tag/nomor]\`\nContoh:\n• \`/struktur set Ketua Raka @6285746616454\`\n• \`/struktur set "Bendahara 1" Naswa @6281234567890\``
+      text: `⚠️ Format salah!\nGunakan: \`/struktur set [jabatan] | [nama] | [tag/nomor]\`\nContoh:\n• \`/struktur set Ketua | Rasyid | @tag\`\n• \`/struktur set "Wakil Ketua" | Budi Santoso | 081234567890\`\n• \`/struktur set Bendahara 1 | Naswa | @tag\``
     };
   }
 
   const trimmed = argsText.trim();
   let position = '';
-  let rest = '';
+  let holderName = '';
+  let rawTagOrPhone = '';
 
-  // 1. Cek apakah jabatan diapit tanda kutip ganda "" (contoh: "Bendahara 1" Naswa @...)
-  const quoteMatch = trimmed.match(/^"([^"]+)"\s*(.*)$/);
-  if (quoteMatch) {
-    position = quoteMatch[1].trim();
-    rest = quoteMatch[2].trim();
+  // 1. Prioritaskan format pemisah pipa '|' (Contoh: "Ketua | Rasyid | @tag")
+  if (trimmed.includes('|')) {
+    const parts = trimmed.split('|').map(p => p.trim());
+    position = parts[0] || '';
+    holderName = parts[1] || '';
+    rawTagOrPhone = parts.slice(2).join('|').trim();
   } else {
-    // 2. Dukung jabatan umum yang mengandung spasi tanpa tanda petik (contoh: bendahara 1, sekretaris 2, wakil ketua)
-    const multiMatch = trimmed.match(/^(bendahara\s+\d+|sekretaris\s+\d+|sekertaris\s+\d+|wakil\s+ketua)\s+(.*)$/i);
-    if (multiMatch) {
-      position = multiMatch[1].trim();
-      rest = multiMatch[2].trim();
+    // 2. Fallback format tanda kutip ganda "" atau spasi lama
+    const quoteMatch = trimmed.match(/^"([^"]+)"\s*(.*)$/);
+    if (quoteMatch) {
+      position = quoteMatch[1].trim();
+      rawTagOrPhone = quoteMatch[2].trim();
     } else {
-      const parts = trimmed.split(/\s+/);
-      position = parts[0];
-      rest = parts.slice(1).join(' ');
+      // Dukung jabatan umum yang mengandung spasi tanpa tanda petik
+      const multiMatch = trimmed.match(/^(bendahara\s+\d+|sekretaris\s+\d+|sekertaris\s+\d+|wakil\s+ketua)\s+(.*)$/i);
+      if (multiMatch) {
+        position = multiMatch[1].trim();
+        rawTagOrPhone = multiMatch[2].trim();
+      } else {
+        const parts = trimmed.split(/\s+/);
+        position = parts[0];
+        rawTagOrPhone = parts.slice(1).join(' ');
+      }
     }
+    holderName = rawTagOrPhone;
   }
 
   if (!position) {
     return {
-      text: `⚠️ Format salah!\nGunakan: \`/struktur set [jabatan] [nama] [tag/nomor]\`\nContoh: \`/struktur set "Sekretaris 2" Citra @628987654321\``
+      text: `⚠️ Format salah!\nGunakan: \`/struktur set [jabatan] | [nama] | [tag/nomor]\`\nContoh: \`/struktur set Ketua | Rasyid | @tag\``
     };
   }
 
-  // Deteksi target phone number / JID dari mentionedJids atau dari teks tag di akhir/bagian teks
+  // Deteksi target phone number / JID dari mentionedJids atau dari teks tag/nomor
   let targetPhone = null;
   if (mentionedJids && mentionedJids.length > 0) {
     targetPhone = mentionedJids[0].replace(/:.*@/, '@');
   }
 
-  // Cek apakah ada nomor telp / tag di dalam teks (misal @628... atau 08... atau 628...)
-  const tagMatch = rest.match(/@?((?:0|62)\d{8,15})(?:@s\.whatsapp\.net)?/);
+  // Cek apakah ada nomor telp / tag di dalam rawTagOrPhone atau holderName
+  const searchStr = rawTagOrPhone || holderName;
+  const tagMatch = searchStr.match(/@?((?:0|62)\d{8,15})(?:@s\.whatsapp\.net)?/);
   if (!targetPhone && tagMatch) {
     let num = tagMatch[1];
     if (num.startsWith('0')) num = '62' + num.slice(1);
     targetPhone = `${num}@s.whatsapp.net`;
   }
 
-  // Bersihkan teks nama dari tag jika ada
-  let holderName = rest;
-  if (tagMatch) {
-    holderName = rest.replace(tagMatch[0], '').trim();
-  } else if (targetPhone) {
-    const rawNum = targetPhone.split('@')[0];
-    holderName = rest.replace(new RegExp(`@?${rawNum}`), '').trim();
+  // Jika tidak menggunakan pipa, bersihkan holderName dari tag jika terdeteksi di dalamnya
+  if (!trimmed.includes('|')) {
+    if (tagMatch) {
+      holderName = holderName.replace(tagMatch[0], '').trim();
+    } else if (targetPhone) {
+      const rawNum = targetPhone.split('@')[0];
+      holderName = holderName.replace(new RegExp(`@?${rawNum}`), '').trim();
+    }
   }
 
   // Jika holderName kosong (hanya mengetik jabatan dan tag), beri fallback nama
@@ -335,15 +347,24 @@ export function deleteOrganizationPosition(groupId, position) {
 }
 
 /**
- * /remind [waktu_menit] [pesan]
+ * /remind [waktu_menit] | [pesan]
  */
 export function handleRemind(sock, groupId, argsText) {
-  const [minutesStr, ...msgParts] = argsText.split(' ');
-  const minutes = parseInt(minutesStr, 10);
-  const message = msgParts.join(' ').trim();
+  let minutes = 0;
+  let message = '';
+
+  if (argsText.includes('|')) {
+    const parts = argsText.split('|').map(p => p.trim());
+    minutes = parseInt(parts[0], 10);
+    message = parts.slice(1).join('|').trim();
+  } else {
+    const [minutesStr, ...msgParts] = argsText.split(' ');
+    minutes = parseInt(minutesStr, 10);
+    message = msgParts.join(' ').trim();
+  }
 
   if (isNaN(minutes) || minutes <= 0 || !message) {
-    return '⚠️ Format salah!\nGunakan: `/remind [menit] [pesan]`\nContoh: `/remind 30 Istirahat selesai kumpul di lab`';
+    return '⚠️ Format salah!\nGunakan: `/remind [menit] | [pesan]`\nContoh: `/remind 30 | Istirahat selesai kumpul di lab`';
   }
 
   const ms = minutes * 60 * 1000;

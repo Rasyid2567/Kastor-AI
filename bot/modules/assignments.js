@@ -113,7 +113,7 @@ export function isClassAdmin(groupId, senderJid, devNumber) {
 }
 
 /**
- * Menampilkan daftar tugas aktif (/pr)
+ * Menampilkan daftar tugas aktif (/tugas)
  */
 export function getActiveAssignments(groupId) {
   groupId = resolveClassGroupId(groupId);
@@ -124,10 +124,10 @@ export function getActiveAssignments(groupId) {
   `).all(groupId);
 
   if (items.length === 0) {
-    return `🎉 *Tidak ada PR aktif!*\nSemua tugas telah selesai atau belum ada PR baru yang ditambahkan. Gunakan \`/pr all\` untuk riwayat tugas.`;
+    return `🎉 *Tidak ada tugas aktif!*\nSemua tugas telah selesai atau belum ada tugas baru yang ditambahkan. Gunakan \`/tugas all\` untuk riwayat tugas.`;
   }
 
-  let text = `📝 *DAFTAR TUGAS & PR AKTIF*\n`;
+  let text = `📝 *DAFTAR TUGAS AKTIF*\n`;
   text += `────────────────────────────\n\n`;
 
   items.forEach(item => {
@@ -137,12 +137,12 @@ export function getActiveAssignments(groupId) {
     text += `👤 *Dibuat oleh:* ${item.created_by}\n\n`;
   });
 
-  text += `💡 _Ketik \`/pr detail [id]\` untuk rincian tugas._`;
+  text += `💡 _Ketik \`/tugas detail [id]\` untuk rincian tugas._`;
   return text;
 }
 
 /**
- * Menampilkan seluruh riwayat PR (/pr all)
+ * Menampilkan seluruh riwayat tugas (/tugas all)
  */
 export function getAllAssignments(groupId) {
   groupId = resolveClassGroupId(groupId);
@@ -156,7 +156,7 @@ export function getAllAssignments(groupId) {
     return `ℹ️ Belum ada riwayat tugas untuk kelas ini.`;
   }
 
-  let text = `📚 *SELURUH RIWAYAT TUGAS & PR*\n`;
+  let text = `📚 *SELURUH RIWAYAT TUGAS*\n`;
   text += `────────────────────────────\n\n`;
 
   items.forEach(item => {
@@ -178,7 +178,7 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 /**
- * Menampilkan detail tugas (/pr detail [id])
+ * Menampilkan detail tugas (/tugas detail [id])
  */
 export function getAssignmentDetail(groupId, id) {
   groupId = resolveClassGroupId(groupId);
@@ -204,14 +204,14 @@ export function getAssignmentDetail(groupId, id) {
 }
 
 /**
- * Menambahkan PR baru (/pr add [mapel] | [deadline: YYYY-MM-DD HH:mm] | [keterangan])
+ * Menambahkan tugas baru (/tugas add [mapel] | [deadline: YYYY-MM-DD HH:mm] | [keterangan])
  * dengan dukungan lampiran gambar
  */
 export function addAssignment(groupId, textArgs, creatorName, imageBuffer = null) {
   groupId = resolveClassGroupId(groupId);
   const parts = textArgs.split('|').map(p => p.trim());
   if (parts.length < 3) {
-    return `⚠️ Format salah!\nGunakan: \`/pr add [mapel] | [YYYY-MM-DD HH:mm] | [keterangan]\`\nContoh: \`/pr add Web | 2026-10-15 23:59 | Bikin Navbar CSS\``;
+    return `⚠️ Format salah!\nGunakan: \`/tugas add [mapel] | [YYYY-MM-DD HH:mm] | [keterangan]\`\nContoh: \`/tugas add Web | 2026-10-15 23:59 | Bikin Navbar CSS\``;
   }
 
   const [subject, deadlineStr, description] = parts;
@@ -242,7 +242,7 @@ export function addAssignment(groupId, textArgs, creatorName, imageBuffer = null
 }
 
 /**
- * Menandai tugas telah selesai (/pr done [id])
+ * Menandai tugas telah selesai (/tugas done [id])
  */
 export function completeAssignment(groupId, id) {
   groupId = resolveClassGroupId(groupId);
@@ -258,7 +258,7 @@ export function completeAssignment(groupId, id) {
 }
 
 /**
- * Menghapus rekaman tugas (/pr del [id])
+ * Menghapus rekaman tugas (/tugas del [id])
  */
 export function deleteAssignment(groupId, id) {
   groupId = resolveClassGroupId(groupId);

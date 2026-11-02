@@ -42,7 +42,7 @@ ${line}
   ↳ Daftar siswa
 • \`/siswa detail [no/nama]\`
   ↳ Detail biodata siswa
-• \`/siswa add [no] [nama]\`
+• \`/siswa add [absen] | [nama] | [tag]\`
   ↳ Tambah siswa (Admin)
 • \`/siswa import [daftar_teks]\`
   ↳ Impor banyak siswa (Admin)
@@ -93,26 +93,26 @@ ${line}
 
 ${line}
 
-📝 TUGAS & PR
-• \`/pr\`
-  ↳ Daftar PR aktif
-• \`/pr all\`
-  ↳ Riwayat seluruh PR
-• \`/pr detail [id]\`
+📝 TUGAS & AKADEMIK
+• \`/tugas\`
+  ↳ Daftar tugas aktif
+• \`/tugas all\`
+  ↳ Riwayat seluruh tugas
+• \`/tugas detail [id]\`
   ↳ Detail tugas
-• \`/pr add [mapel] | [deadline] | [ket]\`
-  ↳ Tambah PR (Admin)
-• \`/pr done [id]\`
+• \`/tugas add [mapel] | [deadline] | [ket]\`
+  ↳ Tambah tugas (Admin)
+• \`/tugas done [id]\`
   ↳ Tandai selesai (Admin)
-• \`/pr del [id]\`
-  ↳ Hapus PR (Admin)
+• \`/tugas del [id]\`
+  ↳ Hapus tugas (Admin)
 
 ${line}
 
 🏛️ ADMINISTRASI
 • \`/struktur\`
   ↳ Struktur pengurus kelas
-• \`/struktur set [jabatan] [nama] [tag]\`
+• \`/struktur set [jabatan] | [nama] | [tag]\`
   ↳ Atur pengurus (Admin)
 • \`/struktur del [jabatan]\`
   ↳ Hapus jabatan (Admin)
@@ -120,7 +120,7 @@ ${line}
   ↳ Mention semua anggota (Admin)
 • \`/hidetag [pesan]\`
   ↳ Pengumuman tanpa mention (Admin)
-• \`/remind [menit] [pesan]\`
+• \`/remind [menit] | [pesan]\`
   ↳ Pengingat grup
 
 ${line}
@@ -136,8 +136,8 @@ ${line}
   ↳ Stiker teks Brat
 • \`/bratvid [teks]\`
   ↳ Stiker animasi Brat
-• \`/smeme [teks] / [atas]|[bawah]\`
-  ↳ Stiker meme (reply foto)
+• \`/smeme [atas] | [bawah]\`
+  ↳ Stiker meme (teks atas | bawah, kosongkan sebelum | untuk bawah saja: /smeme | anjay)
 • \`/emojimix [emoji1]+[emoji2]\`
   ↳ Gabungkan dua emoji
 • \`/qc [teks]\`
@@ -957,34 +957,59 @@ export async function routeMessage(sock, msg) {
           return;
         }
 
-        // Format singkat satu baris: /siswa add [no_absen] [nama] [tag/nomor]
-        const [noStr, ...restParts] = addText.split(/\s+/);
-        const studentNum = parseInt(noStr, 10);
-        const restText = restParts.join(' ').trim();
+        // Format singkat satu baris: /siswa add [no_absen] | [nama] | [tag/nomor]
+        let studentNum = NaN;
+        let studentName = '';
+        let targetPhone = null;
 
-        if (isNaN(studentNum) || !restText) {
+        if (addText.includes('|')) {
+          const parts = addText.split('|').map(p => p.trim());
+          studentNum = parseInt(parts[0], 10);
+          studentName = parts[1] || '';
+          const rawTag = parts.slice(2).join('|').trim();
+
+          if (mentionedJids[0]) {
+            targetPhone = mentionedJids[0].replace(/:.*@/, '@');
+          } else if (rawTag) {
+            const phoneMatch = rawTag.match(/@?((?:0|62)\d{8,15})(?:@s\.whatsapp\.net)?/);
+            if (phoneMatch) {
+              let num = phoneMatch[1];
+              if (num.startsWith('0')) num = '62' + num.slice(1);
+              targetPhone = `${num}@s.whatsapp.net`;
+            }
+          }
+        } else {
+          const [noStr, ...restParts] = addText.split(/\s+/);
+          studentNum = parseInt(noStr, 10);
+          const restText = restParts.join(' ').trim();
+
+          if (isNaN(studentNum) || !restText) {
+            await sock.sendMessage(groupId, {
+              text: '⚠️ Format salah!\n\n*Format Singkat:*\n`/siswa add [no_absen] | [nama] | [tag/nomor]`\nContoh: `/siswa add 1 | Budi Pratama | @6281234567890`\n\n*Format Lengkap:*\n`/siswa add\n1.\nNama : Budi Pratama\nNIS : 12345\nTTL : Ponorogo, 1 Jan 2010\nAlamat : Jl. Melati\n@budi`'
+            });
+            return;
+          }
+
+          studentName = restText;
+          const phoneMatch = restText.match(/@?((?:0|62)\d{8,15})(?:@s\.whatsapp\.net)?$/);
+          if (phoneMatch) {
+            let num = phoneMatch[1];
+            if (num.startsWith('0')) num = '62' + num.slice(1);
+            targetPhone = `${num}@s.whatsapp.net`;
+            studentName = restText.replace(phoneMatch[0], '').trim();
+          } else if (mentionedJids[0]) {
+            targetPhone = mentionedJids[0].replace(/:.*@/, '@');
+            const rawNum = targetPhone.split('@')[0];
+            studentName = restText.replace(new RegExp(`@?${rawNum}`), '').trim();
+          }
+        }
+
+        if (isNaN(studentNum) || !studentName) {
           await sock.sendMessage(groupId, {
-            text: '⚠️ Format salah!\n\n*Format Singkat:*\n`/siswa add [no_absen] [nama] [tag/nomor]`\nContoh: `/siswa add 1 Budi Pratama @6281234567890`\n\n*Format Lengkap:*\n`/siswa add\n1.\nNama : Budi Pratama\nNIS : 12345\nTTL : Ponorogo, 1 Jan 2010\nAlamat : Jl. Melati\n@budi`'
+            text: '⚠️ Format salah!\n\n*Format Singkat:*\n`/siswa add [no_absen] | [nama] | [tag/nomor]`\nContoh: `/siswa add 1 | Budi Pratama | @6281234567890`'
           });
           return;
         }
-
-        let targetPhone = null;
-        let studentName = restText;
-
-        const phoneMatch = restText.match(/@?((?:0|62)\d{8,15})(?:@s\.whatsapp\.net)?$/);
-        if (phoneMatch) {
-          let num = phoneMatch[1];
-          if (num.startsWith('0')) num = '62' + num.slice(1);
-          targetPhone = `${num}@s.whatsapp.net`;
-          studentName = restText.replace(phoneMatch[0], '').trim();
-        } else if (mentionedJids[0]) {
-          targetPhone = mentionedJids[0].replace(/:.*@/, '@');
-          const rawNum = targetPhone.split('@')[0];
-          studentName = restText.replace(new RegExp(`@?${rawNum}`), '').trim();
-        }
-
-        if (!studentName) studentName = 'Siswa ' + studentNum;
 
         db.prepare(`
           INSERT INTO students (group_id, student_number, name, phone_number)
@@ -1327,14 +1352,21 @@ export async function routeMessage(sock, msg) {
 
     // 2.4 Modul Tugas & PR
     if (cmd === '/pr') {
+      await sock.sendMessage(groupId, {
+        text: '⚠️ Perintah `/pr` telah dinonaktifkan.\nSilakan gunakan perintah `/tugas`.\n\nKetik `/menu` untuk melihat daftar perintah aktif.'
+      }, { quoted: msg });
+      return;
+    }
+
+    if (cmd === '/tugas') {
       if (!args) {
         const res = getActiveAssignments(groupId);
         await sock.sendMessage(groupId, { text: res });
-      } else if (args === 'all') {
+      } else if (args === 'all' || args === 'semua') {
         const res = getAllAssignments(groupId);
         await sock.sendMessage(groupId, { text: res });
-      } else if (args.startsWith('detail ')) {
-        const id = args.replace('detail ', '').trim();
+      } else if (/^(detail|info)\s+/i.test(args)) {
+        const id = args.replace(/^(detail|info)\s+/i, '').trim();
         const res = getAssignmentDetail(groupId, id);
         if (res.imagePath) {
           const fs = await import('fs');
@@ -1346,13 +1378,13 @@ export async function routeMessage(sock, msg) {
         } else {
           await sock.sendMessage(groupId, { text: res.text }, { quoted: msg });
         }
-      } else if (args.startsWith('add ')) {
+      } else if (/^(add|tambah)\s+/i.test(args)) {
         const isAdmin = isClassAdmin(groupId, senderJid, devNumber);
         if (!isAdmin) {
-          await sock.sendMessage(groupId, { text: '⚠️ Hanya Admin (Ketua / Sekretaris / Developer) yang dapat menambah PR.' });
+          await sock.sendMessage(groupId, { text: '⚠️ Hanya Admin (Ketua / Sekretaris / Developer) yang dapat menambah tugas.' });
           return;
         }
-        const addArgs = args.replace('add ', '').trim();
+        const addArgs = args.replace(/^(add|tambah)\s+/i, '').trim();
         const senderName = msg.pushName || senderJid.split('@')[0];
 
         // Cek apakah ada lampiran gambar pada pesan langsung atau quoted reply
@@ -1365,34 +1397,34 @@ export async function routeMessage(sock, msg) {
           try {
             imageBuffer = await downloadMediaMessage(msg, 'buffer', {});
           } catch (e) {
-            console.error('Gagal download direct image PR:', e.message);
+            console.error('Gagal download direct image tugas:', e.message);
           }
         } else if (isQuotedImage) {
           try {
             imageBuffer = await downloadMediaMessage({ message: quoted }, 'buffer', {});
           } catch (e) {
-            console.error('Gagal download quoted image PR:', e.message);
+            console.error('Gagal download quoted image tugas:', e.message);
           }
         }
 
         const res = addAssignment(groupId, addArgs, senderName, imageBuffer);
         await sock.sendMessage(groupId, { text: res });
-      } else if (args.startsWith('done ')) {
+      } else if (/^(done|selesai)\s+/i.test(args)) {
         const isAdmin = isClassAdmin(groupId, senderJid, devNumber);
         if (!isAdmin) {
           await sock.sendMessage(groupId, { text: '⚠️ Hanya Admin yang dapat menandai tugas selesai.' });
           return;
         }
-        const id = args.replace('done ', '').trim();
+        const id = args.replace(/^(done|selesai)\s+/i, '').trim();
         const res = completeAssignment(groupId, id);
         await sock.sendMessage(groupId, { text: res });
-      } else if (args.startsWith('del ')) {
+      } else if (/^(del|hapus)\s+/i.test(args)) {
         const isAdmin = isClassAdmin(groupId, senderJid, devNumber);
         if (!isAdmin) {
           await sock.sendMessage(groupId, { text: '⚠️ Hanya Admin yang dapat menghapus tugas.' });
           return;
         }
-        const id = args.replace('del ', '').trim();
+        const id = args.replace(/^(del|hapus)\s+/i, '').trim();
         const res = deleteAssignment(groupId, id);
         await sock.sendMessage(groupId, { text: res });
       }
@@ -1602,7 +1634,12 @@ export async function routeMessage(sock, msg) {
     if (cmd === '/smeme') {
       const media = detectMediaMessage(msg);
       if (!media || media.type !== 'image') {
-        await sock.sendMessage(groupId, { text: 'Balas (*reply*) foto atau sertakan foto dengan perintah `/smeme [teks]` atau `/smeme [atas] | [bawah]`.' });
+        await sock.sendMessage(groupId, {
+          text: 'Balas (*reply*) foto atau sertakan foto dengan perintah:\n`/smeme [atas] | [bawah]` atau `/smeme [teks]`\n\n' +
+                '• Teks bawah saja: `/smeme | anjay`\n' +
+                '• Teks atas saja: `/smeme anjay`\n' +
+                '• Teks atas & bawah: `/smeme atas | bawah`'
+        });
         return;
       }
 

@@ -4,7 +4,7 @@ import { calculateWeekNumber, getScheduleToday, getScheduleTomorrow, getSchedule
 import { getTreasurerRole, setWeeklyFee, parseChecklistText, getCashRecap } from '../modules/cash.js';
 import { getActiveAssignments, getAllAssignments, getAssignmentDetail, addAssignment, completeAssignment, deleteAssignment } from '../modules/assignments.js';
 import { calculateMath } from '../modules/media.js';
-import { isWhatsAppAdmin } from '../modules/admin.js';
+import { isWhatsAppAdmin, setOrganizationPosition } from '../modules/admin.js';
 import { resolveClassGroupId, getLinkedGroups } from '../../database/schema.js';
 import {
   linkGroupToClass,
@@ -66,26 +66,44 @@ const checklistMsg = `KAS TANGGAL 29 JULI 2026 (MINGGU 4)
 const updateResult = parseChecklistText(testGroupId, checklistMsg);
 console.log(`[PASS] Hasil parse teks ceklis:\n${updateResult}\n`);
 
-// 5. Test Modul Tugas / PR
-console.log('--- TEST 4: Modul Tugas & PR ---');
-const addRes = addAssignment(testGroupId, 'Basis Data | 2026-11-01 23:59 | Query JOIN dan Normalisasi 3NF', 'Nicko (Ketua)');
-console.log(`[PASS] Add PR:\n${addRes}\n`);
+// 5. Test Modul Tugas
+console.log('--- TEST 4: Modul Tugas (/tugas) ---');
+const addRes = addAssignment(testGroupId, 'Basis Data | 2026-12-01 23:59 | Query JOIN dan Normalisasi 3NF', 'Nicko (Ketua)');
+console.log(`[PASS] Add Tugas:\n${addRes}\n`);
+if (!addRes.includes('Tugas Berhasil Ditambahkan')) {
+  throw new Error('addAssignment harus mengonfirmasi tugas berhasil ditambahkan!');
+}
 
 const prList = getActiveAssignments(testGroupId);
-console.log(`[PASS] Daftar PR Aktif:\n${prList.substring(0, 200)}...\n`);
+console.log(`[PASS] Daftar Tugas Aktif:\n${prList.substring(0, 200)}...\n`);
+if (!prList.includes('DAFTAR TUGAS AKTIF') || !prList.includes('/tugas detail')) {
+  throw new Error('Daftar tugas aktif harus menggunakan judul DAFTAR TUGAS AKTIF dan petunjuk /tugas detail!');
+}
 
 // 6. Test Kalkulator Matematika
 console.log('--- TEST 5: Modul Matematika (/calc) ---');
 const calcResult = calculateMath('250 * 4 + 1500 / 3');
 console.log(`[PASS] /calc: ${calcResult}`);
 
-// 7. Test Menu Bantuan (Memastikan /rvo tersembunyi)
-console.log('\n--- TEST 6: Verifikasi Menu Bantuan (/rvo Rahasia) ---');
+// 7. Test Menu Bantuan (Memastikan /rvo tersembunyi, /tugas aktif, /pr mati, format pipa konsisten)
+console.log('\n--- TEST 6: Verifikasi Menu Bantuan (/menu) ---');
 const menu = getHelpMenu();
 if (!menu.includes('/rvo')) {
   console.log('✅ [VERIFIED] /rvo TERSEMBUNYI dan TIDAK TERCANTUM di /menu sesuai PRD 4.7!');
 } else {
-  console.error('❌ [FAILED] /rvo bocor di /menu!');
+  throw new Error('❌ [FAILED] /rvo bocor di /menu!');
+}
+
+if (menu.includes('/tugas') && !menu.includes('• `/pr`') && !menu.includes('• `/pr all`')) {
+  console.log('✅ [VERIFIED] /tugas AKTIF di /menu dan /pr telah dinonaktifkan sepenuhnya!');
+} else {
+  throw new Error('❌ [FAILED] /menu harus menampilkan /tugas dan mematikan /pr!');
+}
+
+if (menu.includes('/smeme [atas] | [bawah]') && menu.includes('/struktur set [jabatan] | [nama] | [tag]')) {
+  console.log('✅ [VERIFIED] Seluruh perintah multi-argumen di /menu konsisten menggunakan pemisah pipa (|)!');
+} else {
+  throw new Error('❌ [FAILED] Format pipa (|) pada /menu belum konsisten!');
 }
 
 // 8. Test Otorisasi Admin Grup WhatsApp (isWhatsAppAdmin)
@@ -307,7 +325,65 @@ if (finalSummary.current_balance !== initSummary.current_balance) {
   throw new Error('Saldo setelah penghapusan transaksi tidak kembali ke nominal semula!');
 }
 
+// 10. Test Standarisasi Pemisah Pipa (|) & Parser /smeme
+console.log('\n--- TEST 10: Standarisasi Pemisah Pipa (|) & /smeme Parser ---');
+
+// 10.1 /struktur set dengan pemisah pipa '|'
+const structRes1 = setOrganizationPosition(testGroupId, 'Ketua | Rasyid Ridho | @6281200000002', ['6281200000002@s.whatsapp.net']);
+console.log(`[PASS] /struktur set dengan pipa: ${structRes1.text ? 'Berhasil' : 'Gagal'}`);
+const checkStruct1 = db.prepare('SELECT * FROM organization_structures WHERE group_id = ? AND UPPER(position_name) = ?').get(testGroupId, 'KETUA');
+if (!checkStruct1 || checkStruct1.holder_name !== 'Rasyid Ridho') {
+  throw new Error(`Holder name harus "Rasyid Ridho", dapat: "${checkStruct1?.holder_name}"`);
+}
+
+// 10.2 /struktur set jabatan multi-kata dengan pemisah pipa '|'
+const structRes2 = setOrganizationPosition(testGroupId, 'Wakil Ketua | Budi Santoso | 081200000003');
+console.log(`[PASS] /struktur set multi-kata dengan pipa: ${structRes2.text ? 'Berhasil' : 'Gagal'}`);
+const checkStruct2 = db.prepare('SELECT * FROM organization_structures WHERE group_id = ? AND UPPER(position_name) = ?').get(testGroupId, 'WAKIL KETUA');
+if (!checkStruct2 || checkStruct2.holder_name !== 'Budi Santoso' || !checkStruct2.phone_number.includes('6281200000003')) {
+  throw new Error(`Data Wakil Ketua salah! holder_name: "${checkStruct2?.holder_name}", phone: "${checkStruct2?.phone_number}"`);
+}
+
+// 10.3 Logika Parser /smeme
+function parseSmemeArgs(args) {
+  let topText = '';
+  let bottomText = '';
+  if (args.includes('|')) {
+    const parts = args.split('|');
+    topText = parts[0].trim();
+    bottomText = parts.slice(1).join('|').trim();
+  } else {
+    topText = args.trim();
+  }
+  if (!topText && !bottomText) {
+    topText = 'MEME TEXT';
+  }
+  return { topText, bottomText };
+}
+
+// Skenario A: Teks atas saja (/smeme anjay)
+const sA = parseSmemeArgs('anjay');
+console.log(`[PASS] /smeme anjay -> top: "${sA.topText}", bottom: "${sA.bottomText}"`);
+if (sA.topText !== 'anjay' || sA.bottomText !== '') {
+  throw new Error('Skenario /smeme anjay harus hanya mengisi topText!');
+}
+
+// Skenario B: Teks bawah saja (/smeme | anjay)
+const sB = parseSmemeArgs('| anjay');
+console.log(`[PASS] /smeme | anjay -> top: "${sB.topText}", bottom: "${sB.bottomText}"`);
+if (sB.topText !== '' || sB.bottomText !== 'anjay') {
+  throw new Error('Skenario /smeme | anjay harus hanya mengisi bottomText!');
+}
+
+// Skenario C: Teks atas dan bawah (/smeme atas | bawah)
+const sC = parseSmemeArgs('atas | bawah');
+console.log(`[PASS] /smeme atas | bawah -> top: "${sC.topText}", bottom: "${sC.bottomText}"`);
+if (sC.topText !== 'atas' || sC.bottomText !== 'bawah') {
+  throw new Error('Skenario /smeme atas | bawah harus mengisi kedua teks!');
+}
+
 // Bersihkan data uji coba agar tidak mencemari database produksi
+db.prepare('DELETE FROM organization_structures WHERE group_id = ?').run(testGroupId);
 db.prepare('DELETE FROM financial_transactions WHERE group_id = ?').run(testGroupId);
 db.prepare('DELETE FROM class_groups WHERE target_group_id = ?').run(testGroupId);
 db.prepare('DELETE FROM classes WHERE group_id = ?').run(testGroupId);

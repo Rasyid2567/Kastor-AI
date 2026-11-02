@@ -131,9 +131,9 @@ Siswa wajib mengenakan Wearpack Lengkap & Safety Shoes!
 💡 Pembayaran dapat diserahkan langsung ke Bendahara.
 ```
 
-### 3. Pengingat Tugas & PR Otomatis (`/pr`)
+### 3. Pengingat Tugas Otomatis (`/tugas`)
 ```text
-📝 DAFTAR TUGAS & PR AKTIF
+📝 DAFTAR TUGAS AKTIF
 ────────────────────────────
 📌 [ID: 28] Pemrograman Web
 ⏰ Tenggat: Besok, 07:30 WIB (Sisa 12 Jam)
@@ -183,28 +183,36 @@ Kontak Siswa: @6282140474039
 | `/kas upload` | Bendahara (PM) | Kirim file `.xlsx` | Impor data kas massal via berkas Excel |
 | `/keuangan` | Pengurus / Dev | `/keuangan` | Laporan buku kas (saldo, pemasukan non-kas, pengeluaran) |
 
-### 📝 Modul Tugas & PR
+### 📝 Modul Tugas Kelas
+> [!NOTE]
+> Perintah `/pr` telah dinonaktifkan secara resmi dan dialihkan ke `/tugas`.
+
 | Perintah | Hak Akses | Contoh Penggunaan | Deskripsi |
 |---|---|---|---|
-| `/pr` | Semua Member | `/pr` | Menampilkan seluruh daftar tugas/PR yang masih aktif |
-| `/pr all` | Semua Member | `/pr all` | Menampilkan seluruh tugas (termasuk yang telah selesai) |
-| `/pr add` | Pengurus / Dev | `/pr add Basis Data \| 2026-11-02 23:59 \| Buat ERD` | Menambahkan agenda tugas baru ke database |
-| `/pr done [id]` | Pengurus / Dev | `/pr done 28` | Menandai tugas telah selesai dikerjakan |
-| `/pr del [id]` | Pengurus / Dev | `/pr del 28` | Menghapus data tugas dari database |
+| `/tugas` | Semua Member | `/tugas` | Menampilkan seluruh daftar tugas yang masih aktif |
+| `/tugas all` | Semua Member | `/tugas all` | Menampilkan seluruh riwayat tugas (termasuk yang telah selesai) |
+| `/tugas detail [id]` | Semua Member | `/tugas detail 28` | Menampilkan rincian instruksi tugas |
+| `/tugas add [data]` | Pengurus / Dev | `/tugas add Basis Data \| 2026-11-02 23:59 \| Buat ERD` | Menambahkan agenda tugas baru ke database |
+| `/tugas done [id]` | Pengurus / Dev | `/tugas done 28` | Menandai tugas telah selesai dikerjakan |
+| `/tugas del [id]` | Pengurus / Dev | `/tugas del 28` | Menghapus data tugas dari database |
 
-### 👥 Modul Siswa & Data Orang Tua
+### 👥 Modul Siswa & Pengurus Kelas
 | Perintah | Hak Akses | Contoh Penggunaan | Deskripsi |
 |---|---|---|---|
 | `/siswa` | Semua Member | `/siswa` | Daftar nomor absen dan nama siswa di kelas |
 | `/siswa detail [no/nama]` | Semua Member | `/siswa detail 1` | Menampilkan biodata lengkap siswa |
-| `/siswa add` | Admin Kelas | `/siswa add 1 Budi @6281234567890` | Mendaftarkan siswa baru ke kelas |
+| `/siswa add [absen] \| [nama] \| [tag]` | Admin Kelas | `/siswa add 1 \| Budi Pratama \| @6281234567890` | Mendaftarkan siswa baru ke kelas |
 | `/siswa import` | Admin Kelas | `/siswa import [teks_baris]` | Mendaftarkan siswa massal (bulk import) |
+| `/struktur` | Semua Member | `/struktur` | Menampilkan bagan struktur organisasi kelas |
+| `/struktur set [jabatan] \| [nama] \| [tag]` | Admin Kelas | `/struktur set Ketua \| Rasyid \| @6281234567890` | Mengatur struktur pengurus kelas |
+| `/struktur del [jabatan]` | Admin Kelas | `/struktur del Bendahara 2` | Menghapus jabatan pengurus |
+| `/remind [menit] \| [pesan]` | Admin Kelas | `/remind 30 \| Istirahat selesai kumpul di lab` | Pengingat berwaktu otomatis di grup |
 | `/ortu [no/nama]` | Rahasia (Admin/Member) | `/ortu 1` atau `/ortu` | Menampilkan data orang tua siswa *(Perintah Rahasia)* |
 
 ### 🔗 Modul Multi-Group Class Linking
 | Perintah | Hak Akses | Contoh Penggunaan | Deskripsi |
 |---|---|---|---|
-| `/link [kelas] [penanda]` | Admin Grup / Dev | `/link XI RPL C Khusus Cowok` | Menautkan grup cabang ke kelas induk |
+| `/link [kelas] \| [penanda]` | Admin Grup / Dev | `/link XI RPL C \| Khusus Cowok` | Menautkan grup cabang ke kelas induk |
 | `/link list` | Admin Grup / Dev | `/link list` | Melihat daftar grup cabang yang terhubung |
 | `/unlink` | Admin Grup / Dev | `/unlink` | Memutuskan tautan grup cabang |
 
@@ -212,6 +220,7 @@ Kontak Siswa: @6282140474039
 | Perintah | Hak Akses | Contoh Penggunaan | Deskripsi |
 |---|---|---|---|
 | `/s` atau `/sticker` | Semua Member | Kirim foto/video dengan caption `/s` | Konversi gambar/video ke stiker WebP |
+| `/smeme [atas] \| [bawah]` | Semua Member | Balas foto dengan `/smeme \| anjay` (bawah) atau `/smeme anjay` (atas) | Stiker meme dengan teks atas, bawah, atau keduanya |
 | `/toimg` | Semua Member | Balas stiker dengan `/toimg` | Konversi stiker WebP ke gambar JPEG |
 | `/ocr` | Semua Member | Kirim foto dengan caption `/ocr` | Ekstraksi teks dari foto dokumen/papan tulis |
 | `/topdf` | Semua Member | Kirim dokumen dengan `/topdf` | Menggabungkan gambar menjadi berkas PDF |
