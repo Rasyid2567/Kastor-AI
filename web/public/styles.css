@@ -1201,34 +1201,30 @@ ol {
   color: var(--accent) !important;
 }
 
-/* Sidebar Footer */
-.sidebar-footer {
-  padding: 14px;
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.user-card {
-  display: flex;
-  align-items: center;
+/* Sidebar Footer (.me) */
+.sidebar-footer,
+.me {
+  margin-top: auto;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+  display: flex !important;
+  flex-direction: row !important;
   gap: 10px;
+  align-items: center;
+  background: transparent !important;
 }
 
-.user-avatar {
+.user-avatar,
+.av {
   width: 36px;
   height: 36px;
-  border-radius: var(--radius-sm);
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 50% !important;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  display: grid !important;
+  place-items: center;
   font-weight: 700;
-  font-size: 0.88rem;
-  color: var(--text);
+  color: var(--tx);
   flex-shrink: 0;
 }
 
@@ -1237,13 +1233,12 @@ ol {
   flex-direction: column;
   min-width: 0;
   flex: 1;
-  gap: 2px;
 }
 
 .user-name {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text);
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: var(--tx) !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1410,15 +1405,14 @@ ol {
   color: var(--text-muted);
 }
 
-.page-content {
+.page-content,
+.wrap {
   flex: 1;
   padding: 24px 28px 48px;
-  max-width: 1400px;
   width: 100%;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  box-sizing: border-box;
+  outline: none !important;
+  border: none !important;
 }
 
 /* ==========================================================================
@@ -5255,6 +5249,7 @@ svg.i {
   border-radius: 12px;
   background: var(--s2);
   border: 1px solid var(--line);
+  position: relative;
 }
 .cls small {
   color: var(--mu);
@@ -5266,6 +5261,61 @@ svg.i {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.cls .ddm {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--s1);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  display: none;
+  z-index: 50;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.cls .ddm.open {
+  display: block;
+}
+.cls .ddm button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--tx);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+.cls .ddm button:hover {
+  background: var(--s2);
+}
+.cls .ddm button.on {
+  color: var(--ac);
+  background: var(--acs);
+}
+
+#page-content,
+.page-content,
+.main-wrapper,
+main {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+#page-content:focus,
+.page-content:focus,
+main:focus,
+.main-wrapper:focus {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .lbl {

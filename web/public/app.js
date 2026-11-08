@@ -66,66 +66,75 @@
     {
       id: 'dashboard',
       label: 'Dashboard',
-      title: 'Ringkasan Kelas & Aktivitas',
-      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>',
+      sub: 'Ringkasan',
+      title: 'Dashboard',
+      icon: '<svg class="i" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/></svg>',
       canShow: () => true
     },
     {
       id: 'students',
       label: 'Data Siswa',
-      title: 'Database & Biodata Siswa',
-      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      sub: 'Siswa',
+      title: 'Data Siswa',
+      icon: '<svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/></svg>',
       canShow: () => true
     },
     {
       id: 'schedules',
       label: 'Jadwal Pelajaran',
+      sub: 'Jadwal Pelajaran',
       title: 'Jadwal Blok KBM Mingguan',
-      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+      icon: '<svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>',
       canShow: () => true
     },
     {
       id: 'cash',
       label: 'Kas Kelas',
-      title: 'Manajemen & Rekapitulasi Kas Kelas',
-      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>',
+      sub: 'Kas',
+      title: 'Kas Kelas',
+      icon: '<svg class="i" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M16 13h2"/><path d="M3 10h18"/></svg>',
       // Disembunyikan dari sidebar untuk SEKRETARIS
       canShow: (role) => getEffectiveRole(role) !== 'SEKRETARIS'
     },
     {
       id: 'finance',
       label: 'Buku Kas & Rekap',
+      sub: 'Buku Kas',
       title: 'Buku Kas & Rekapitulasi Keuangan Kelas',
-      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+      icon: '<svg class="i" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',
       // Disembunyikan untuk SEKRETARIS
       canShow: (role) => getEffectiveRole(role) !== 'SEKRETARIS'
     },
     {
       id: 'assignments',
       label: 'Tugas & PR',
-      title: 'Daftar Tugas & Pekerjaan Rumah',
-      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
+      sub: 'Tugas',
+      title: 'Tugas & PR',
+      icon: '<svg class="i" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',
       canShow: () => true
     },
     {
       id: 'structure',
       label: 'Administrasi Kelas',
-      title: 'Struktur Organisasi & Pengumuman',
-      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>',
+      sub: 'Administrasi',
+      title: 'Administrasi Kelas',
+      icon: '<svg class="i" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
       canShow: () => true
     },
     {
       id: 'utilities',
       label: 'AI & Utilitas',
-      title: 'Asisten Belajar AI & Kalkulator Ilmiah',
-      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M16 14H8a4 4 0 0 0-4 4v2h16v-2a4 4 0 0 0-4-4z"/></svg>',
+      sub: 'Utilitas',
+      title: 'AI & Utilitas',
+      icon: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
       canShow: () => true
     },
     {
       id: 'dev-console',
       label: 'Developer Console',
-      title: 'Konsol Sistem, Metrik VPS & Audit Log',
-      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>',
+      sub: 'Developer',
+      title: 'Developer Console',
+      icon: '<svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M13 15h4"/></svg>',
       // Hanya ditampilkan untuk DEVELOPER
       canShow: (role) => getEffectiveRole(role) === 'DEVELOPER'
     }
@@ -1593,22 +1602,15 @@
     const sideClassName = document.getElementById('sidebar-class-name');
     const sideGroupId = document.getElementById('sidebar-class-groupid');
 
-    if (sideClassName) sideClassName.textContent = className;
+    const activeClass = state.classes.find((c) => c.group_id === (u.active_group_id || u.group_id));
+    const countInfo = activeClass?.student_count ? ` (${activeClass.student_count} siswa)` : '';
+    if (sideClassName) sideClassName.textContent = `${className}${countInfo}`;
     if (sideGroupId) sideGroupId.textContent = u.active_group_id || u.group_id || '';
 
-    if (isDeveloper()) {
-      staticBox?.classList.add('hidden');
-      switcherBox?.classList.remove('hidden');
-      if (lockTag) {
-        lockTag.style.display = 'none';
-      }
-    } else {
-      switcherBox?.classList.add('hidden');
-      staticBox?.classList.remove('hidden');
-      if (lockTag) {
-        lockTag.style.display = 'none';
-      }
-    }
+    // Always keep clean card display according to redesign.html
+    staticBox?.classList.remove('hidden');
+    switcherBox?.classList.add('hidden');
+    if (lockTag) lockTag.style.display = 'none';
   }
 
   async function loadClassesForContext() {
@@ -1648,7 +1650,29 @@
             .join('');
           selectEl.value = activeGroupId || (state.classes[0]?.group_id || '');
         }
-        syncCustomSelectWithOptions(selectEl);
+      }
+
+      // Populate redesign.html dropdown menu (#dd-kls)
+      const ddm = document.getElementById('dd-kls');
+      if (ddm) {
+        ddm.innerHTML = state.classes
+          .map(
+            (c) =>
+              `<button type="button" class="${c.group_id === activeGroupId ? 'on' : ''}" data-group-id="${escapeHtml(c.group_id)}">${escapeHtml(c.class_name)} (${Number(c.student_count || 0)} siswa)</button>`
+          )
+          .join('');
+
+        ddm.querySelectorAll('button').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const gid = btn.getAttribute('data-group-id');
+            ddm.classList.remove('open');
+            if (selectEl) {
+              selectEl.value = gid;
+              selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          });
+        });
       }
     }
   }
@@ -1739,10 +1763,10 @@
     const pageTitleEl = document.getElementById('topbar-page-title');
     const desktopPageTitleEl = document.getElementById('desktop-page-title');
 
-    const titleText = navMeta.title || navMeta.desc || navMeta.label;
-    if (moduleLabelEl) moduleLabelEl.textContent = navMeta.label;
+    const subText = navMeta.sub || navMeta.label;
+    if (moduleLabelEl) moduleLabelEl.textContent = subText;
     if (pageTitleEl) pageTitleEl.textContent = navMeta.label; // Mobile: judul ringkas ("Dashboard", "Jadwal", dll) agar tidak sesak
-    if (desktopPageTitleEl) desktopPageTitleEl.textContent = titleText; // Desktop: judul lengkap
+    if (desktopPageTitleEl) desktopPageTitleEl.textContent = navMeta.title || navMeta.label; // Desktop: judul halaman sesuai redesign.html
 
     const container = document.getElementById('page-content');
     if (!container) return;
@@ -5973,6 +5997,17 @@
     document.getElementById('btn-mobile-menu')?.addEventListener('click', openMobileDrawer);
     document.getElementById('btn-close-sidebar')?.addEventListener('click', closeMobileDrawer);
     document.getElementById('sidebar-backdrop')?.addEventListener('click', closeMobileDrawer);
+
+    // Class Context Dropdown toggle (redesign.html)
+    document.getElementById('class-context-panel')?.addEventListener('click', (e) => {
+      if (!isDeveloper()) return;
+      document.getElementById('dd-kls')?.classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#class-context-panel')) {
+        document.getElementById('dd-kls')?.classList.remove('open');
+      }
+    });
 
     // Developer Class Switcher (POST /api/classes/switch)
     document.getElementById('developer-class-select')?.addEventListener('change', async (e) => {

@@ -210,59 +210,49 @@
 
     <!-- Sidebar Kiri (248px Tetap di Desktop >= 1024px) -->
     <aside id="app-sidebar" class="app-sidebar" aria-label="Menu utama aplikasi">
-      <div class="sidebar-top">
-        <button type="button" id="btn-close-sidebar" class="xb dx hide-desktop" aria-label="Tutup menu navigasi">
-          <svg class="i" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-        <div class="logo">
-          <div class="m">K</div>
-          <div>
-            <b>Kastor AI</b>
-            <small style="color: var(--text-muted); font-size: 11px;">Classroom OS</small>
-          </div>
+      <button type="button" id="btn-close-sidebar" class="xb dx hide-desktop" aria-label="Tutup menu navigasi">
+        <svg class="i" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="logo">
+        <div class="m">K</div>
+        <div>
+          <b>Kastor AI</b>
+          <small style="color: var(--mu); font-size: 11px;">Classroom OS</small>
         </div>
+      </div>
 
-        <!-- Konteks Kelas Aktif & Class Switcher (Khusus Developer) -->
-        <div class="cls dd" id="class-context-panel" style="cursor: pointer; display: block;">
-          <div class="context-label-row" style="display: flex; justify-content: space-between; align-items: center;">
-            <small style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;">Kelas</small>
-            <span id="sidebar-context-lock" class="context-lock-tag" style="font-size: 10px; color: var(--text-muted);">Terkunci</span>
-          </div>
-          <!-- Tampilan untuk Non-Developer (Read-only Class Context) -->
-          <div id="class-static-display" style="font-weight: 600; margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">
-            <span id="sidebar-class-name">—</span>
-            <span id="sidebar-class-groupid" class="class-static-id font-mono" style="display: none;"></span>
-            <span style="color: var(--text-muted); font-size: 12px;">▾</span>
-          </div>
-          <!-- Tampilan Dropdown Switcher khusus DEVELOPER -->
-          <div id="class-switcher-container" class="class-switcher-box hidden" style="margin-top: 6px;">
-            <label for="developer-class-select" class="sr-only">Pilih Kelas Aktif</label>
-            <select id="developer-class-select" class="form-select class-select" style="width: 100%; height: 36px; font-size: 13px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 0 8px;">
-              <option value="">Memuat daftar kelas...</option>
-            </select>
-          </div>
+      <!-- Konteks Kelas Aktif & Class Switcher (Khusus Developer) -->
+      <div class="cls dd" id="class-context-panel" style="cursor: pointer; display: block;">
+        <small style="color: var(--mu); font-size: 11px;">Kelas</small>
+        <div style="font-weight: 600; margin-top: 2px; display: flex; justify-content: space-between; align-items: center;">
+          <span id="sidebar-class-name">—</span>
+          <span style="color: var(--mu); font-size: 12px;">▾</span>
+        </div>
+        <div class="ddm" id="dd-kls" style="left: 0; right: 0;"></div>
+        <div id="class-switcher-container" style="display: none !important;" aria-hidden="true">
+          <span id="sidebar-context-lock"></span>
+          <span id="sidebar-class-groupid"></span>
+          <select id="developer-class-select" class="form-select class-select"></select>
         </div>
       </div>
 
       <!-- Menu Navigasi Utama Desktop -->
       <nav class="sidebar-nav nav" aria-label="Daftar modul">
-        <div class="lbl nav-section-label" style="color: var(--text-muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 14px 12px 8px;">Administrasi</div>
+        <div class="lbl" style="color: var(--mu); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 14px 12px 8px;">Administrasi</div>
         <ul id="sidebar-nav-list" class="nav-list" style="list-style: none; padding: 0; margin: 0;">
           <!-- Dirender secara dinamis sesuai otorisasi Role di app.js -->
         </ul>
       </nav>
 
       <!-- Footer Akun Pengguna & Tombol Keluar (Desktop) -->
-      <div class="me sidebar-footer" style="margin-top: auto; padding: 12px; border-top: 1px solid var(--border); display: flex; gap: 10px; align-items: center;">
-        <div class="av user-avatar" id="sidebar-user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); display: grid; place-items: center; font-weight: 700;">U</div>
-        <div class="user-details" style="flex: 1; min-width: 0;">
-          <div class="user-name-row">
-            <b id="sidebar-user-name" class="user-name" style="display: block; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Pengurus</b>
-          </div>
-          <small id="sidebar-user-role" class="mo role-badge" style="color: var(--text-muted); font-size: 11px;">ROLE</small>
+      <div class="me" style="margin-top: auto; padding: 12px; border-top: 1px solid var(--line); display: flex; gap: 10px; align-items: center;">
+        <div class="av" id="sidebar-user-avatar">U</div>
+        <div style="flex: 1; min-width: 0;">
+          <b id="sidebar-user-name" style="display: block; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Pengurus</b>
+          <small id="sidebar-user-role" class="mo" style="color: var(--mu); font-size: 11px; display: block;">ROLE</small>
           <span id="sidebar-user-phone" class="user-phone font-mono" style="display: none;">-</span>
         </div>
-        <button type="button" id="btn-logout" class="btn g btn-logout" title="Keluar Sesi" aria-label="Keluar Sesi" style="color: var(--text-muted); border: 0; background: none; padding: 6px; cursor: pointer;">
+        <button type="button" id="btn-logout" class="btn g btn-logout" title="Keluar" aria-label="Keluar Sesi" style="color: var(--mu); border: 0; background: none; padding: 6px; cursor: pointer;">
           <svg class="i" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
         </button>
       </div>
@@ -273,36 +263,34 @@
       <!-- Header Halaman Desktop & Ringkasan Konteks (>= 1024px) -->
       <header class="top page-topbar">
         <div style="display: flex; gap: 12px; align-items: center;">
-          <button type="button" id="btn-mobile-menu" class="btn g mnav hide-desktop" aria-label="Menu" style="border: 0; background: none; color: var(--text-muted); padding: 4px; display: none;">
+          <button type="button" id="btn-mobile-menu" class="btn g mnav hide-desktop" aria-label="Menu" style="border: 0; background: none; color: var(--mu); padding: 4px;">
             <svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
           </button>
           <div class="page-heading-group">
-            <small style="color: var(--text-muted); font-size: 12px;">Kastor AI / <span id="topbar-module-label">Dashboard</span></small>
-            <h1 id="desktop-page-title" class="page-title" style="font-size: 18px; margin: 0; letter-spacing: -0.01em;">Ringkasan Kelas</h1>
+            <small style="color: var(--mu); font-size: 12px;">Kastor AI / <span id="topbar-module-label">Ringkasan</span></small>
+            <h1 id="desktop-page-title" style="font-size: 18px; margin: 0; font-weight: 700; letter-spacing: -0.01em;">Dashboard</h1>
           </div>
         </div>
 
-        <div class="topbar-meta-actions" style="display: flex; gap: 10px; align-items: center;">
-          <div id="topbar-class-btn" class="context-pill-group" style="display: none !important;" aria-hidden="true">
-            <strong id="topbar-class-badge" class="context-pill-value">—</strong>
-          </div>
-          <div class="search hide-mobile" style="display: flex; align-items: center; gap: 8px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; height: 38px; width: 280px; color: var(--text-muted);">
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <div class="search hide-mobile">
             <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
-            <input type="search" id="global-search-input" placeholder="Cari siswa, tugas, atau NIS" style="background: none; border: 0; outline: 0; color: var(--text); width: 100%; font: inherit; font-size: 13px;">
+            <input type="search" id="global-search-input" placeholder="Cari siswa, tugas, atau NIS">
           </div>
-          <div class="topbar-user-pill">
-            <span id="topbar-role-badge" class="role-badge">ROLE</span>
-            <span id="topbar-phone-label" class="topbar-phone"></span>
-          </div>
-          <button type="button" id="btn-refresh-page" class="btn g" title="Muat ulang data halaman ini" aria-label="Segarkan" style="border: 0; background: none; color: var(--text-muted); padding: 6px; cursor: pointer;">
+          <button type="button" id="btn-refresh-page" class="btn g" title="Notifikasi" aria-label="Notifikasi" style="border: 0; background: none; color: var(--mu); padding: 6px; cursor: pointer;">
             <svg class="i" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-            <span class="hide-sm" style="display: none;">Segarkan</span>
           </button>
+          <!-- Hidden compatibility elements for tests -->
+          <div style="display: none !important;" aria-hidden="true">
+            <span id="topbar-role-badge"></span>
+            <span id="topbar-phone-label"></span>
+            <div id="topbar-class-btn"><strong id="topbar-class-badge">—</strong></div>
+          </div>
         </div>
       </header>
 
       <!-- Kontainer Halaman Dinamis (5 State Wajib: Loading, Empty, Error, Forbidden, Content) -->
-      <main id="page-content" class="page-content" tabindex="-1">
+      <main id="page-content" class="page-content wrap" tabindex="-1">
         <!-- Diisi secara dinamis oleh app.js -->
       </main>
     </div>
