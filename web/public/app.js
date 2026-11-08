@@ -1459,6 +1459,11 @@
   }
 
   async function checkInitialSession() {
+    if (window.location.pathname === '/demo' || window.location.pathname.startsWith('/demo/')) {
+      if (window.KastorDemoSandbox && !window.KastorDemoSandbox.isActive()) {
+        window.KastorDemoSandbox.activate();
+      }
+    }
     const res = await apiRequest('/api/auth/me');
     if (res.ok && res.data.user) {
       applyAuthenticatedUser(res.data);
@@ -6177,6 +6182,20 @@
       applyAuthenticatedUser(res.data);
       showToast(`Selamat datang kembali, ${state.currentUser.name || state.currentUser.role}.`, 'success');
       await enterAppShell();
+    });
+
+    // Tombol Akses Mode Demo Terisolasi dari Portal Login
+    document.getElementById('btn-enter-demo')?.addEventListener('click', async () => {
+      if (window.location.pathname !== '/demo') {
+        window.history.pushState({}, '', '/demo');
+      }
+      if (window.KastorDemoSandbox) {
+        window.KastorDemoSandbox.activate();
+      }
+      await checkInitialSession();
+      if (window.showToast) {
+        showToast('Memasuki Mode Demo Sandbox terisolasi.', 'info');
+      }
     });
 
     // Live Password Strength & Confirmation Match Feedback

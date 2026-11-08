@@ -872,7 +872,14 @@
   const originalFetch = window.fetch;
   window.fetch = async function (input, init) {
     const url = typeof input === 'string' ? input : (input?.url || '');
-    if (isDemoActive() && url.startsWith('/api/')) {
+    let pathname = url;
+    try {
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        pathname = new URL(url).pathname;
+      }
+    } catch {}
+
+    if (isDemoActive() && (pathname.startsWith('/api/') || pathname.startsWith('api/'))) {
       return handleDemoApi(url, init);
     }
     return originalFetch.apply(this, arguments);

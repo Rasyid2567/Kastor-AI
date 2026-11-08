@@ -109,7 +109,13 @@ export async function handleRequest(req, res) {
       const isLegitimateAsset =
         (ext === '.js' && secFetchDest === 'script') ||
         (ext === '.css' && secFetchDest === 'style') ||
-        (referer && (referer.includes(`://${hostNormalized}`) || referer.includes(`.${hostNormalized}`)));
+        (referer && (
+          referer.includes(`://${hostNormalized}`) ||
+          referer.includes(`.${hostNormalized}`) ||
+          referer.includes('syidxmc.my.id') ||
+          referer.includes('localhost') ||
+          referer.includes('127.0.0.1')
+        ));
 
       if (isDirectNavigation || !isLegitimateAsset) {
         sendJson(res, 404, { ok: false, error: 'Berkas tidak ditemukan.' });
