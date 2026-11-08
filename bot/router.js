@@ -4,7 +4,14 @@ import { getFinancialSummary, getFormattedFinanceReport } from './modules/financ
 import { isClassAdmin, isDeveloper, getActiveAssignments, getAllAssignments, getAssignmentDetail, addAssignment, completeAssignment, deleteAssignment } from './modules/assignments.js';
 import { handleTagAll, handleHideTag, getOrganizationStructure, setOrganizationPosition, deleteOrganizationPosition, handleRemind, isWhatsAppAdmin } from './modules/admin.js';
 import { calculateMath, performOcr, createPdfFromImages, convertToSticker, convertStickerToImage, convertStickerToGif, generateBratImage, generateBratVideo, generateStickerMeme, generateEmojiMix, generateQuoteChat, checkStickerRateLimit, recordStickerUsage, removeStickerUsageById } from './modules/media.js';
-import { handleReadViewOnce } from './modules/secret.js';
+import {
+  handleReadViewOnce,
+  handleLimitCommand,
+  checkUserCooldown,
+  recordUserCooldown,
+  clearUserCooldown,
+  formatLimitDuration
+} from './modules/secret.js';
 import { askAiAssistant, extractTextFromDocument } from './modules/ai.js';
 import { getSystemStatusInfo } from './modules/system.js';
 import {
@@ -15,17 +22,18 @@ import {
   parseLinkArguments,
   updateLinkedGroupLabel
 } from './modules/classes.js';
-import { resolveClassGroupId } from '../database/schema.js';
+import { resolveClassGroupId, isGroupDisabled, setGroupDisabled, setGroupEnabled } from '../database/schema.js';
+import { handleDownloadCommand, safeReact, extractUrl } from './modules/downloader.js';
 import { downloadMediaMessage, normalizeMessageContent } from '@whiskeysockets/baileys';
 
 /**
  * Menu bantuan publik
- * CATATAN PENTING: Perintah rahasia /rvo dan /ortu DILARANG dicantumkan di sini
+ * CATATAN PENTING: Perintah rahasia /rvo, /ortu, /off, /on, dan /limit DILARANG dicantumkan di sini
  */
 export function getHelpMenu() {
   const line = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
   return `📚 PANDUAN BOT KELAS
-ARAS 1.0
+Kastor AI
 
 ${line}
 
@@ -148,6 +156,14 @@ ${line}
   ↳ Foto dokumen menjadi PDF
 • \`/calc [rumus]\`
   ↳ Kalkulator matematika
+• \`/tt [link]\`
+  ↳ Download video TikTok tanpa watermark
+• \`/yt [link]\`
+  ↳ Download video YouTube
+• \`/ig [link]\`
+  ↳ Download video / reels Instagram
+• \`/fb [link]\`
+  ↳ Download video Facebook
 • \`/ping\`
   ↳ Status & performa bot / server
 
@@ -162,7 +178,7 @@ ${line}
   Lampiran: PDF, Word, Excel, dan foto (bisa reply dokumen)
 
 ${line}
-ARAS 1.0 — Asisten Kelas Digital`;
+Kastor AI — Asisten Kelas Digital`;
 }
 
 /**
@@ -364,7 +380,7 @@ function cleanAiPrompt(text, botName = 'Kastor AI') {
     p = p.replace(new RegExp(`@?${escaped}\\s*[:,]?\\s*`, 'gi'), '');
   }
 
-  p = p.replace(/@?(?:bot|kastor(?:\s*ai)?|aras|asisten)\s*[:,]?\s*/gi, '');
+  p = p.replace(/@?(?:bot|kastor(?:\s*ai)?|asisten)\s*[:,]?\s*/gi, '');
   p = p.replace(/^@\S+\s*/, '');
   p = p.replace(/@\d+/g, '');
 
@@ -606,6 +622,14 @@ export async function routeMessage(sock, msg) {
       return;
     }
 
+    // Perintah Rahasia /limit via PM
+    if (text.startsWith('/limit') || text.startsWith('.limit')) {
+      const parts = text.split(' ');
+      const args = parts.slice(1).join(' ').trim();
+      await handleLimitCommand(sock, msg, remoteJid, senderJid, args, devNumber);
+      return;
+    }
+
     // Status Bot & Server via PM
     if (text === '/ping' || text === '/status' || text === '.ping' || text === '.status') {
       const statusText = getSystemStatusInfo(msg.messageTimestamp, startPerf);
@@ -615,6 +639,14 @@ export async function routeMessage(sock, msg) {
 
     // Asisten AI via PM (/ai, /tanya)
     if (text.startsWith('/ai') || text.startsWith('/tanya')) {
+      const cd = checkUserCooldown('ai', senderJid);
+      if (!cd.allowed) {
+        await sock.sendMessage(remoteJid, {
+          text: `⏳ Pemanggilan AI sedang cooldown. Mohon tunggu *${cd.formatted_remaining}* sebelum bertanya kembali.`
+        }, { quoted: msg });
+        return;
+      }
+
       const cleanPrompt = text.replace(/^(\/ai|\/tanya)\s*/i, '').trim();
       const media = detectAttachedOrQuotedMedia(msg);
       let docData = null;
@@ -639,11 +671,38 @@ export async function routeMessage(sock, msg) {
         return;
       }
 
+      recordUserCooldown('ai', senderJid);
       try {
         await sock.sendPresenceUpdate('composing', remoteJid);
       } catch {}
-      const aiReply = await askAiAssistant(cleanPrompt, docData, quotedText);
-      await sock.sendMessage(remoteJid, { text: aiReply }, { quoted: msg });
+      try {
+        const aiReply = await askAiAssistant(cleanPrompt, docData, quotedText);
+        await sock.sendMessage(remoteJid, { text: aiReply }, { quoted: msg });
+      } catch (err) {
+        clearUserCooldown('ai', senderJid);
+        throw err;
+      }
+      return;
+    }
+
+    // Video Downloader via PM (/tt, /yt, /ig, /fb)
+    const pmParts = text.split(' ');
+    const pmCmd = pmParts[0].toLowerCase();
+    if (['/tt', '/yt', '/ig', '/fb'].includes(pmCmd)) {
+      const pmArgs = pmParts.slice(1).join(' ').trim();
+      const quotedText = extractQuotedText(msg);
+      const url = extractUrl(pmArgs, quotedText);
+      if (url) {
+        const cd = checkUserCooldown('tt', senderJid);
+        if (!cd.allowed) {
+          await sock.sendMessage(remoteJid, {
+            text: `⏳ Pengunduhan video sedang cooldown. Mohon tunggu *${cd.formatted_remaining}* sebelum mengunduh kembali.`
+          }, { quoted: msg });
+          return;
+        }
+        recordUserCooldown('tt', senderJid);
+      }
+      await handleDownloadCommand(sock, msg, pmCmd, pmArgs, remoteJid, quotedText);
       return;
     }
 
@@ -654,14 +713,47 @@ export async function routeMessage(sock, msg) {
   // 2. ROUTING GRUP KELAS
   // ==========================================
   const groupId = remoteJid;
+  const isDev = isDeveloper(senderJid, devNumber);
+  const disabled = isGroupDisabled(groupId);
 
   // Kasus A: Pesan berawalan '/' atau status '.' (Command Handler)
-  const isCmd = text.startsWith('/') || /^\.(ping|status)\b/i.test(text);
+  const isCmd = text.startsWith('/') || /^\.(ping|status|on|off)\b/i.test(text);
+
+  // Jika grup dalam status nonaktif (/off), bot HANYA merespon jika Developer mengirim /on (via reaction)
+  if (disabled) {
+    if (isCmd) {
+      const parts = text.split(' ');
+      let cmd = parts[0].toLowerCase();
+      if (cmd.startsWith('.')) cmd = '/' + cmd.slice(1);
+      if (cmd === '/on' && isDev) {
+        setGroupEnabled(groupId);
+        await safeReact(sock, groupId, msg.key, '✅');
+        return;
+      }
+    }
+    // Senyap total: abaikan seluruh pesan, command lain, mention, atau upaya /on oleh non-developer
+    return;
+  }
+
   if (isCmd) {
     const parts = text.split(' ');
     let cmd = parts[0].toLowerCase();
     if (cmd.startsWith('.')) cmd = '/' + cmd.slice(1);
     const args = parts.slice(1).join(' ').trim();
+
+    // 2.0.1 Perintah Kontrol Developer (/off & /on via Reaksi Emoji Saja)
+    if (cmd === '/off') {
+      if (!isDev) return;
+      setGroupDisabled(groupId, senderJid);
+      await safeReact(sock, groupId, msg.key, '⛔');
+      return;
+    }
+
+    if (cmd === '/on') {
+      if (!isDev) return;
+      await safeReact(sock, groupId, msg.key, '✅');
+      return;
+    }
 
     // 2.1 Menu Bantuan
     if (cmd === '/menu' || cmd === '/help') {
@@ -1519,7 +1611,8 @@ export async function routeMessage(sock, msg) {
 
       const limitCheck = checkStickerRateLimit(groupId);
       if (!limitCheck.allowed) {
-        await sock.sendMessage(groupId, { text: limitCheck.message }, { quoted: msg });
+        const wait = formatLimitDuration(limitCheck.remaining_seconds);
+        await sock.sendMessage(groupId, { text: `${limitCheck.message} (Mohon tunggu ${wait} lagi)` }, { quoted: msg });
         return;
       }
 
@@ -1586,7 +1679,8 @@ export async function routeMessage(sock, msg) {
 
       const limitCheck = checkStickerRateLimit(groupId);
       if (!limitCheck.allowed) {
-        await sock.sendMessage(groupId, { text: limitCheck.message }, { quoted: msg });
+        const wait = formatLimitDuration(limitCheck.remaining_seconds);
+        await sock.sendMessage(groupId, { text: `${limitCheck.message} (Mohon tunggu ${wait} lagi)` }, { quoted: msg });
         return;
       }
 
@@ -1616,7 +1710,8 @@ export async function routeMessage(sock, msg) {
 
       const limitCheck = checkStickerRateLimit(groupId);
       if (!limitCheck.allowed) {
-        await sock.sendMessage(groupId, { text: limitCheck.message }, { quoted: msg });
+        const wait = formatLimitDuration(limitCheck.remaining_seconds);
+        await sock.sendMessage(groupId, { text: `${limitCheck.message} (Mohon tunggu ${wait} lagi)` }, { quoted: msg });
         return;
       }
 
@@ -1645,7 +1740,8 @@ export async function routeMessage(sock, msg) {
 
       const limitCheck = checkStickerRateLimit(groupId);
       if (!limitCheck.allowed) {
-        await sock.sendMessage(groupId, { text: limitCheck.message }, { quoted: msg });
+        const wait = formatLimitDuration(limitCheck.remaining_seconds);
+        await sock.sendMessage(groupId, { text: `${limitCheck.message} (Mohon tunggu ${wait} lagi)` }, { quoted: msg });
         return;
       }
 
@@ -1703,7 +1799,8 @@ export async function routeMessage(sock, msg) {
 
       const limitCheck = checkStickerRateLimit(groupId);
       if (!limitCheck.allowed) {
-        await sock.sendMessage(groupId, { text: limitCheck.message }, { quoted: msg });
+        const wait = formatLimitDuration(limitCheck.remaining_seconds);
+        await sock.sendMessage(groupId, { text: `${limitCheck.message} (Mohon tunggu ${wait} lagi)` }, { quoted: msg });
         return;
       }
 
@@ -1745,7 +1842,8 @@ export async function routeMessage(sock, msg) {
 
       const limitCheck = checkStickerRateLimit(groupId);
       if (!limitCheck.allowed) {
-        await sock.sendMessage(groupId, { text: limitCheck.message }, { quoted: msg });
+        const wait = formatLimitDuration(limitCheck.remaining_seconds);
+        await sock.sendMessage(groupId, { text: `${limitCheck.message} (Mohon tunggu ${wait} lagi)` }, { quoted: msg });
         return;
       }
 
@@ -1814,6 +1912,24 @@ export async function routeMessage(sock, msg) {
       return;
     }
 
+    // 2.6.2 Modul Video Downloader (/tt, /yt, /ig, /fb)
+    if (cmd === '/tt' || cmd === '/yt' || cmd === '/ig' || cmd === '/fb') {
+      const quotedText = extractQuotedText(msg);
+      const url = extractUrl(args, quotedText);
+      if (url) {
+        const cd = checkUserCooldown('tt', senderJid);
+        if (!cd.allowed) {
+          await sock.sendMessage(groupId, {
+            text: `⏳ Pengunduhan video sedang cooldown. Mohon tunggu *${cd.formatted_remaining}* sebelum mengunduh kembali.`
+          }, { quoted: msg });
+          return;
+        }
+        recordUserCooldown('tt', senderJid);
+      }
+      await handleDownloadCommand(sock, msg, cmd, args, groupId, quotedText);
+      return;
+    }
+
     // 2.7 Modul Utilitas Rahasia (/rvo)
     if (cmd === '/rvo') {
       const err = await handleReadViewOnce(sock, msg, groupId);
@@ -1827,6 +1943,12 @@ export async function routeMessage(sock, msg) {
     if (cmd === '/ortu') {
       const classGroupId = resolveClassGroupId(groupId);
       await handleOrtuCommand(sock, groupId, classGroupId, args.trim());
+      return;
+    }
+
+    // 2.7.2 Modul Pengaturan Rahasia Rate Limit (/limit)
+    if (cmd === '/limit') {
+      await handleLimitCommand(sock, msg, groupId, senderJid, args, devNumber);
       return;
     }
 
@@ -1872,6 +1994,14 @@ export async function routeMessage(sock, msg) {
 
     // 2.8 Modul Asisten AI (/ai, /tanya)
     if (cmd === '/ai' || cmd === '/tanya') {
+      const cd = checkUserCooldown('ai', senderJid);
+      if (!cd.allowed) {
+        await sock.sendMessage(groupId, {
+          text: `⏳ Pemanggilan AI sedang cooldown. Mohon tunggu *${cd.formatted_remaining}* sebelum bertanya kembali.`
+        }, { quoted: msg });
+        return;
+      }
+
       const cleanPrompt = args.trim();
       const media = detectAttachedOrQuotedMedia(msg);
       let docData = null;
@@ -1896,11 +2026,17 @@ export async function routeMessage(sock, msg) {
         return;
       }
 
+      recordUserCooldown('ai', senderJid);
       try {
         await sock.sendPresenceUpdate('composing', groupId);
       } catch {}
-      const aiReply = await askAiAssistant(cleanPrompt, docData, quotedText);
-      await sock.sendMessage(groupId, { text: aiReply }, { quoted: msg });
+      try {
+        const aiReply = await askAiAssistant(cleanPrompt, docData, quotedText);
+        await sock.sendMessage(groupId, { text: aiReply }, { quoted: msg });
+      } catch (err) {
+        clearUserCooldown('ai', senderJid);
+        throw err;
+      }
       return;
     }
 
@@ -1918,6 +2054,14 @@ export async function routeMessage(sock, msg) {
   const isBotMentioned = mentionedJids.length > 0 && mentionedJids.some(j => isBotJid(j, sock));
 
   if (isBotMentioned) {
+    const cd = checkUserCooldown('ai', senderJid);
+    if (!cd.allowed) {
+      await sock.sendMessage(groupId, {
+        text: `⏳ Pemanggilan AI sedang cooldown. Mohon tunggu *${cd.formatted_remaining}* sebelum bertanya kembali.`
+      }, { quoted: msg });
+      return;
+    }
+
     const botName = sock?.user?.name || 'Kastor AI';
     const cleanPrompt = cleanAiPrompt(text, botName);
     const quotedText = extractQuotedText(msg);
@@ -1942,11 +2086,17 @@ export async function routeMessage(sock, msg) {
       return;
     }
 
+    recordUserCooldown('ai', senderJid);
     try {
       await sock.sendPresenceUpdate('composing', groupId);
     } catch {}
-    const aiReply = await askAiAssistant(cleanPrompt, docData, quotedText);
-    await sock.sendMessage(groupId, { text: aiReply }, { quoted: msg });
+    try {
+      const aiReply = await askAiAssistant(cleanPrompt, docData, quotedText);
+      await sock.sendMessage(groupId, { text: aiReply }, { quoted: msg });
+    } catch (err) {
+      clearUserCooldown('ai', senderJid);
+      throw err;
+    }
     return;
   }
 }

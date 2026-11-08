@@ -1,7 +1,7 @@
 {
   "name": "kastor-ai",
   "version": "1.0.0",
-  "description": "Multi-Group WhatsApp Classroom Management Bot & Web Dashboard (ARAS 1.0)",
+  "description": "Multi-Group WhatsApp Classroom Management Bot & Web Dashboard (Kastor AI)",
   "author": "Kastor AI Team",
   "license": "MIT",
   "main": "bot/index.js",
@@ -43,7 +43,7 @@
   "keywords": [
     "whatsapp-bot",
     "classroom-management",
-    "aras",
+    "kastor-ai",
     "smk",
     "school-administration",
     "baileys",

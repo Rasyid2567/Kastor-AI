@@ -1,4 +1,4 @@
-# Panduan Berkontribusi pada Kastor AI (ARAS 1.0)
+# Panduan Berkontribusi pada Kastor AI
 
 Terima kasih atas ketertarikan Anda untuk berkontribusi pada pengembangan **Kastor AI**! Proyek ini terbuka untuk siapa saja yang ingin membantu meningkatkan sistem administrasi kelas, manajemen jadwal blok SMK, serta automasi WhatsApp & web dashboard.
 

@@ -90,6 +90,33 @@ export async function handleRequest(req, res) {
     const safeRelative = path.normalize(pathname).replace(/^(\.\.(\/|\\|$))+/, '');
     const candidatePath = path.join(publicDir, safeRelative === '/' ? 'index.html' : safeRelative);
 
+    // Proteksi akses langsung ke berkas script & style (.js & .css) via address bar atau curl tanpa referer sah
+    const ext = path.extname(candidatePath).toLowerCase();
+    if (ext === '.js' || ext === '.css') {
+      const secFetchDest = (req.headers?.['sec-fetch-dest'] || '').toLowerCase();
+      const secFetchMode = (req.headers?.['sec-fetch-mode'] || '').toLowerCase();
+      const acceptHeader = (req.headers?.['accept'] || '').toLowerCase();
+      const referer = (req.headers?.['referer'] || '').toLowerCase();
+      const hostNormalized = host.toLowerCase().split(':')[0];
+
+      // Deteksi akses navigasi langsung (misal: diketik langsung di browser address bar)
+      const isDirectNavigation =
+        secFetchDest === 'document' ||
+        secFetchMode === 'navigate' ||
+        acceptHeader.includes('text/html');
+
+      // Validasi bahwa permintaan sah berasal dari parsing tag HTML (<script> atau <link rel="stylesheet">) atau referer internal
+      const isLegitimateAsset =
+        (ext === '.js' && secFetchDest === 'script') ||
+        (ext === '.css' && secFetchDest === 'style') ||
+        (referer && (referer.includes(`://${hostNormalized}`) || referer.includes(`.${hostNormalized}`)));
+
+      if (isDirectNavigation || !isLegitimateAsset) {
+        sendJson(res, 404, { ok: false, error: 'Berkas tidak ditemukan.' });
+        return;
+      }
+    }
+
     // Pastikan tetap berada di dalam publicDir
     if (candidatePath.startsWith(publicDir)) {
       if (serveStaticFile(res, candidatePath)) {
@@ -133,6 +160,6 @@ if (isMain) {
   const server = createWebServer();
 
   server.listen(port, host, () => {
-    console.log(`🌐 [ARAS 1.0 WEB DASHBOARD] Server aktif (Dual-Stack IPv4/IPv6) di http://localhost:${port}`);
+    console.log(`🌐 [KASTOR AI WEB DASHBOARD] Server aktif (Dual-Stack IPv4/IPv6) di http://localhost:${port}`);
   });
 }

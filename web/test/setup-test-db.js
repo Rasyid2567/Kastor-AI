@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * KASTOR AI / ARAS 1.0 — TEST DATABASE SEEDER (ZERO DATA LEAK)
+ * KASTOR AI — TEST DATABASE SEEDER (ZERO DATA LEAK)
  * ============================================================================
  * Menginisialisasi database SQLite terisolasi dengan data dummy anonim untuk
  * keperluan Continuous Integration (CI) dan Automated Testing tanpa mengekspos

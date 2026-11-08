@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import * as xlsx from 'xlsx';
 
-const SYSTEM_PROMPT = `Kamu adalah Kastor AI, asisten AI resmi untuk siswa dan pengurus kelas SMK (ARAS 1.0 Classroom Assistant).
+const SYSTEM_PROMPT = `Kamu adalah Kastor AI, asisten AI resmi untuk siswa dan pengurus kelas.
 
 IDENTITAS UTAMA:
 - Nama kamu adalah "Kastor AI".
@@ -284,7 +284,7 @@ export async function askAiAssistant(userPrompt, documentData = null, quotedCont
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`,
             'HTTP-Referer': 'https://github.com/syid/whatsapp-classroom-bot',
-            'X-Title': 'ARAS Classroom Bot'
+            'X-Title': 'Kastor AI Classroom Bot'
           },
           body: JSON.stringify({
             model: m,

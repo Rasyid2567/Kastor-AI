@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * KASTOR AI — ARAS 1.0 WEB DASHBOARD FRONTEND CONTROLLER
+ * KASTOR AI — WEB DASHBOARD FRONTEND CONTROLLER
  * Bahasa: 100% Bahasa Indonesia | Keamanan: XSS-Safe (escapeHtml) + CSRF Token
  * ============================================================================
  */
@@ -28,6 +28,7 @@
     scheduleTeacher: '',
     // Cash state
     cashSettings: { weekly_fee: 0, active_weeks_count: 0 },
+    cashHolidayWeeks: [],
     cashTreasurers: [],
     cashTreasurerNames: [],
     cashActiveSchoolWeek: 1,
@@ -1151,7 +1152,6 @@
 
     if (triggerBtn) {
       triggerBtn.setAttribute('aria-expanded', 'true');
-      triggerBtn.classList.add('active');
     }
 
     lockBodyScroll();
@@ -1188,6 +1188,66 @@
     }
   }
 
+  let isBottomNavPillInitialized = false;
+
+  function updateBottomNavSlidingPill(options = {}) {
+    const instant = typeof options === 'boolean' ? options : Boolean(options?.instant);
+    const nav = document.getElementById('mobile-bottom-nav');
+    const pill = document.getElementById('nav-sliding-pill');
+    if (!nav || !pill) return;
+
+    // Skip calculation if mobile nav is hidden (e.g. desktop view >= 1024px or display: none)
+    if (nav.offsetParent === null || window.getComputedStyle(nav).display === 'none') {
+      return;
+    }
+
+    // Locate currently active navigation slot
+    const activeSlot = nav.querySelector('.nav-slot-btn.active');
+    if (!activeSlot || activeSlot.classList.contains('hidden') || activeSlot.offsetParent === null) {
+      pill.style.opacity = '0';
+      pill.classList.remove('ready');
+      return;
+    }
+
+    const iconBox = activeSlot.querySelector('.nav-slot-icon-box') || activeSlot;
+    const navRect = nav.getBoundingClientRect();
+    const iconRect = iconBox.getBoundingClientRect();
+
+    if (iconRect.width === 0 || iconRect.height === 0 || navRect.width === 0) {
+      return;
+    }
+
+    const pillWidth = iconBox.offsetWidth || iconRect.width;
+    const pillHeight = iconBox.offsetHeight || iconRect.height;
+    const iconCenterX = iconRect.left + (iconRect.width / 2);
+    const iconCenterY = iconRect.top + (iconRect.height / 2);
+    const pillX = iconCenterX - navRect.left - (pillWidth / 2);
+    const pillTop = iconCenterY - navRect.top - (pillHeight / 2);
+
+    const shouldBeInstant = instant || !isBottomNavPillInitialized;
+
+    if (shouldBeInstant) {
+      pill.classList.add('no-transition');
+      const prevTransition = pill.style.transition;
+      pill.style.transition = 'none';
+      pill.style.width = `${Math.round(pillWidth)}px`;
+      pill.style.height = `${Math.round(pillHeight)}px`;
+      pill.style.transform = `translate3d(${Math.round(pillX)}px, ${Math.round(pillTop)}px, 0)`;
+      pill.style.opacity = '1';
+      pill.classList.add('ready');
+      void pill.offsetHeight; // Force reflow
+      pill.style.transition = prevTransition;
+      pill.classList.remove('no-transition');
+      isBottomNavPillInitialized = true;
+    } else {
+      pill.style.opacity = '1';
+      pill.classList.add('ready');
+      pill.style.width = `${Math.round(pillWidth)}px`;
+      pill.style.height = `${Math.round(pillHeight)}px`;
+      pill.style.transform = `translate3d(${Math.round(pillX)}px, ${Math.round(pillTop)}px, 0)`;
+    }
+  }
+
   function updateActiveNavState(moduleId) {
     // 1. Desktop sidebar buttons
     const sidebarBtns = document.querySelectorAll('#sidebar-nav-list .nav-btn');
@@ -1220,6 +1280,9 @@
       btn.classList.toggle('active', isTarget);
       btn.setAttribute('aria-current', isTarget ? 'page' : 'false');
     });
+
+    // 4. Update sliding pill indicator position
+    updateBottomNavSlidingPill();
   }
 
   function updateNavVisibility() {
@@ -1240,6 +1303,9 @@
 
     // 3. More sheet items
     renderMoreNavigation();
+
+    // 4. Update sliding pill indicator position for slot layout changes
+    updateBottomNavSlidingPill({ instant: true });
   }
 
   // --------------------------------------------------------------------------
@@ -1449,6 +1515,7 @@
     updateNavVisibility();
     await loadClassesForContext();
     await navigateToModule(state.activeModule || 'dashboard');
+    requestAnimationFrame(() => updateBottomNavSlidingPill({ instant: true }));
   }
 
   function renderUserAndClassContext() {
@@ -2587,6 +2654,18 @@
     return trimmed;
   }
 
+  function normalizeScheduleSubject(subject) {
+    if (!subject) return '';
+    const s = subject.trim().toLowerCase();
+    if (s.includes('kejuruan rpl') || s.includes('bengkel / praktik kejuruan rpl') || s.includes('praktik kejuruan rpl')) {
+      return 'Kejuruan RPL (Bengkel / Praktik)';
+    }
+    if (s.includes('bengkel / mp') || s.includes('mata pelajaran pilihan (bengkel)')) {
+      return 'Mata Pelajaran Pilihan (Bengkel)';
+    }
+    return subject.trim();
+  }
+
   function renderSchedulesView(container) {
     const canWrite = canEditAcademic();
     const currentWeek = Number(state.scheduleWeek || state.activeSchoolWeek || 1);
@@ -2596,10 +2675,14 @@
     const uniqueSchedules = [];
     const seenSubjects = new Set();
     for (const item of state.schedules) {
-      const key = `${(item.subject_name || '').trim().toLowerCase()}|${(item.teacher_name || '').trim().toLowerCase()}|${(item.room_name || '').trim().toLowerCase()}|${item.block_type}`;
+      if (item.teacher_name === 'Guru Pendamping / Wali Kelas' || (item.subject_name || '').toLowerCase().includes('refleksi')) {
+        continue;
+      }
+      const normSubject = normalizeScheduleSubject(item.subject_name);
+      const key = `${normSubject.toLowerCase()}|${(item.teacher_name || '').trim().toLowerCase()}|${(item.room_name || '').trim().toLowerCase()}|${item.block_type}`;
       if (!seenSubjects.has(key)) {
         seenSubjects.add(key);
-        uniqueSchedules.push(item);
+        uniqueSchedules.push({ ...item, subject_name: normSubject });
       }
     }
 
@@ -2999,7 +3082,7 @@
   // 11. MODULE 4: KAS KELAS (/api/cash/*)
   // --------------------------------------------------------------------------
 
-  async function loadCashModule(container) {
+  async function loadCashModule(container, options = {}) {
     if (!canViewCash()) {
       container.innerHTML = renderForbiddenState(
         'Sekretaris tidak memiliki hak akses untuk membuka modul Kas Kelas.'
@@ -3007,7 +3090,9 @@
       return;
     }
 
-    container.innerHTML = renderLoadingState('Memuat rekapitulasi & pengaturan kas kelas...');
+    if (!options?.silent) {
+      container.innerHTML = renderLoadingState('Memuat rekapitulasi & pengaturan kas kelas...');
+    }
 
     const [settingsRes, recapRes] = await Promise.all([
       apiRequest('/api/cash/settings'),
@@ -3029,14 +3114,18 @@
     }
 
     state.cashSettings = settingsRes.data.settings || { weekly_fee: 0, active_weeks_count: 0 };
+    state.cashHolidayWeeks = recapRes.data.holiday_weeks || settingsRes.data.holiday_weeks || [];
     state.cashTreasurers = settingsRes.data.treasurers || [];
     state.cashTreasurerNames = settingsRes.data.treasurer_names || [];
     state.cashActiveSchoolWeek = settingsRes.data.active_school_week || state.activeSchoolWeek || 2;
-    if (!state.cashWeek || state.cashWeek < 2) {
-      state.cashWeek = Math.max(2, state.cashActiveSchoolWeek);
-    }
     state.cashRecap = recapRes.data.students || [];
     state.cashFormattedText = recapRes.data.formatted_text || '';
+
+    const hasWeek1 = state.cashRecap.some((s) => s.weeks && s.weeks[1]);
+    const minWeek = hasWeek1 ? 1 : 2;
+    if (!state.cashWeek || state.cashWeek < minWeek) {
+      state.cashWeek = Math.max(minWeek, state.cashActiveSchoolWeek);
+    }
 
     renderCashView(container);
   }
@@ -3049,7 +3138,17 @@
     const startCashWeek = hasWeek1 ? 1 : 2;
     const endCashWeek = Math.max(startCashWeek, maxWeek, 20);
     const currentCashWeek = Math.max(startCashWeek, Math.min(Number(state.cashWeek || state.cashActiveSchoolWeek || startCashWeek), endCashWeek));
-    const activeWeeks = Math.max(0, maxWeek - startCashWeek + 1);
+    const isCurrentWeekHoliday = Array.isArray(state.cashHolidayWeeks) && state.cashHolidayWeeks.includes(currentCashWeek);
+    const holidayWeeksSet = new Set(state.cashHolidayWeeks || []);
+    let activeWeeks = 0;
+    let holidaysInRange = 0;
+    for (let w = startCashWeek; w <= maxWeek; w++) {
+      if (!holidayWeeksSet.has(w)) {
+        activeWeeks++;
+      } else {
+        holidaysInRange++;
+      }
+    }
 
     // USER REQUIREMENT (Foto 1): Kartu Daftar Bendahara Kelas menampilkan NAMA bukan nomor telepon
     let treasurersText = 'Belum ada bendahara terdaftar';
@@ -3069,19 +3168,35 @@
     const cashWeekOptionsList = [];
     for (let w = startCashWeek; w <= endCashWeek; w++) {
       const isCur = (w === state.cashActiveSchoolWeek);
+      const isHol = holidayWeeksSet.has(w);
+      const tags = [];
+      if (isCur) tags.push('Minggu Ini');
+      if (isHol) tags.push('Libur');
+      const tagStr = tags.length > 0 ? ` (${tags.join(', ')})` : '';
+
       weekOptions.push(
-        `<option value="${w}" ${w === currentCashWeek ? 'selected' : ''}>Minggu ${w}${
-          isCur ? ' (Minggu Ini)' : ''
-        }</option>`
+        `<option value="${w}" ${w === currentCashWeek ? 'selected' : ''}>Minggu ${w}${tagStr}</option>`
       );
       cashWeekOptionsList.push({
         value: String(w),
-        label: `Minggu ${w}${isCur ? ' (Minggu Ini)' : ''}`
+        label: `Minggu ${w}${tagStr}`
       });
     }
 
     const weekHeaders = [
-      `<th class="text-center font-mono" style="min-width: 90px; font-weight: 600;">Minggu ${currentCashWeek}</th>`
+      `<th class="text-center font-mono" style="min-width: 135px; font-weight: 600;">
+        <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;">
+          <span>Minggu ${currentCashWeek}</span>
+          <span class="badge ${isCurrentWeekHoliday ? 'badge-warning' : 'badge-success-soft'}" style="font-size: 0.7rem; padding: 2px 6px;">
+            ${isCurrentWeekHoliday ? 'Libur' : 'Aktif'}
+          </span>
+          ${isEditable ? `
+            <button type="button" class="btn btn-sm btn-secondary" id="btn-toggle-cash-holiday" data-week="${currentCashWeek}" style="padding: 2px 8px; font-size: 0.72rem; line-height: 1.2; border-radius: 4px; cursor: pointer;" title="${isCurrentWeekHoliday ? `Aktifkan kembali Minggu ${currentCashWeek} (Masuk)` : `Tandai Minggu ${currentCashWeek} sebagai Libur Kas`}">
+              ${isCurrentWeekHoliday ? 'Set Aktif' : 'Set Libur'}
+            </button>
+          ` : ''}
+        </div>
+      </th>`
     ];
 
     let displayedStudents = state.cashRecap;
@@ -3104,7 +3219,7 @@
             ${formatRupiah(fee)}<span> / siswa / mgg</span>
           </div>
           <span class="badge badge-info" style="font-size: 0.76rem;">
-            Minggu 2 – ${startCashWeek + activeWeeks - 1} (${activeWeeks} Minggu Aktif)
+            Minggu ${startCashWeek} – ${maxWeek} (${activeWeeks} Minggu Aktif${holidaysInRange > 0 ? `, ${holidaysInRange} Libur` : ''})
           </span>
         </div>
 
@@ -3144,7 +3259,7 @@
           </div>
           <div class="stat-value font-mono">${activeWeeks} <span style="font-size: 0.9rem; font-weight: 500; color: var(--text-muted);">Minggu</span></div>
           <div class="stat-footer">
-            <span>Minggu 2 s/d ${startCashWeek + activeWeeks - 1} • Total: ${formatRupiah(fee * activeWeeks)}/siswa</span>
+            <span>Minggu ${startCashWeek} s/d ${maxWeek}${holidaysInRange > 0 ? ` (${holidaysInRange} Libur)` : ''} • Total: ${formatRupiah(fee * activeWeeks)}/siswa</span>
           </div>
         </div>
 
@@ -3202,8 +3317,8 @@
                 <input type="number" id="input-cash-fee" class="form-input font-mono" min="0" step="500" value="${fee}" required />
               </div>
               <div class="form-group">
-                <label for="input-cash-weeks" class="form-label">Jumlah Minggu Aktif (0-52)</label>
-                <input type="number" id="input-cash-weeks" class="form-input font-mono" min="0" max="52" value="${activeWeeks}" required />
+                <label for="input-cash-weeks" class="form-label">Total Minggu Kas (0-52)</label>
+                <input type="number" id="input-cash-weeks" class="form-input font-mono" min="0" max="52" value="${Number(state.cashSettings.active_weeks_count || maxWeek)}" required />
               </div>
               <div class="form-group">
                 <button type="submit" class="btn btn-primary">Simpan Pengaturan Kas</button>
@@ -3219,8 +3334,18 @@
         <div class="panel-header">
           <div class="panel-title-group">
             <h2 class="panel-title">Tabel Rekapitulasi Kas Siswa</h2>
-            <p class="panel-subtitle">
-              Menampilkan kas: <strong>Minggu ${currentCashWeek}</strong> • Format: centang untuk lunas, nominal untuk tunggakan
+            <p class="panel-subtitle" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span>Menampilkan kas: <strong>Minggu ${currentCashWeek}</strong> • Format: centang untuk lunas, nominal untuk tunggakan</span>
+              <span class="cash-holiday-mobile-group hide-desktop" style="display: inline-flex; align-items: center; gap: 6px;">
+                <span class="badge ${isCurrentWeekHoliday ? 'badge-warning' : 'badge-success-soft'}" style="font-size: 0.72rem; padding: 2px 7px;">
+                  ${isCurrentWeekHoliday ? 'Libur' : 'Aktif'}
+                </span>
+                ${isEditable ? `
+                  <button type="button" class="btn btn-sm btn-secondary hide-desktop" id="btn-toggle-cash-holiday-mobile" data-week="${currentCashWeek}" style="padding: 2px 8px; font-size: 0.72rem; border-radius: 4px; cursor: pointer;" title="${isCurrentWeekHoliday ? `Aktifkan kembali Minggu ${currentCashWeek} (Masuk)` : `Tandai Minggu ${currentCashWeek} sebagai Libur Kas`}">
+                    ${isCurrentWeekHoliday ? 'Set Aktif' : 'Set Libur'}
+                  </button>
+                ` : ''}
+              </span>
             </p>
           </div>
         </div>
@@ -3237,15 +3362,19 @@
                 ${displayedStudents
                   .map((st) => {
                     const paid = Boolean(st.weeks && st.weeks[currentCashWeek]);
+                    const btnClass = paid ? 'paid' : (isCurrentWeekHoliday ? 'holiday' : 'unpaid');
+                    const btnTitle = isCurrentWeekHoliday
+                      ? `Minggu ${currentCashWeek}: ${paid ? 'Lunas (Dibayar di Minggu Libur)' : 'Libur Kas (Bebas Tagihan)'}`
+                      : `Minggu ${currentCashWeek}: ${paid ? 'Lunas' : 'Belum Lunas'}`;
                     const weekChips = [
                       `
                         <div class="cash-card-week-slot">
                           <span class="cash-card-week-label">Minggu ${currentCashWeek}</span>
                           <button
                             type="button"
-                            class="cash-week-btn ${paid ? 'paid' : 'unpaid'}"
+                            class="cash-week-btn ${btnClass}"
                             ${isEditable ? `data-toggle-cash="${Number(st.student_id)}:${currentCashWeek}:${paid ? 0 : 1}"` : 'disabled'}
-                            title="Minggu ${currentCashWeek}: ${paid ? 'Lunas' : 'Belum Lunas'}"
+                            title="${btnTitle}"
                           >
                             ${paid ? '✓' : '—'}
                           </button>
@@ -3299,14 +3428,18 @@
                     ${displayedStudents
                       .map((st) => {
                         const paid = Boolean(st.weeks && st.weeks[currentCashWeek]);
+                        const btnClass = paid ? 'paid' : (isCurrentWeekHoliday ? 'holiday' : 'unpaid');
+                        const btnTitle = isCurrentWeekHoliday
+                          ? `Minggu ${currentCashWeek}: ${paid ? 'Lunas (Dibayar di Minggu Libur)' : 'Libur Kas (Bebas Tagihan)'}`
+                          : `Minggu ${currentCashWeek}: ${paid ? 'Lunas' : 'Belum Lunas'}`;
                         const weekCells = [
                           `
                             <td class="text-center">
                               <button
                                 type="button"
-                                class="cash-week-btn ${paid ? 'paid' : 'unpaid'}"
+                                class="cash-week-btn ${btnClass}"
                                 ${isEditable ? `data-toggle-cash="${Number(st.student_id)}:${currentCashWeek}:${paid ? 0 : 1}"` : 'disabled'}
-                                title="Minggu ${currentCashWeek}: ${paid ? 'Lunas' : 'Belum Lunas'}"
+                                title="${btnTitle}"
                               >
                                 ${paid ? '✓' : '—'}
                               </button>
@@ -3416,6 +3549,52 @@
         el.selectionStart = el.selectionEnd = el.value.length;
       }
     });
+
+    const handleToggleHoliday = async (week, btn) => {
+      const prevText = btn ? btn.textContent : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Menyimpan...';
+      }
+      try {
+        const isCurrentlyHoliday = Array.isArray(state.cashHolidayWeeks) && state.cashHolidayWeeks.includes(week);
+        const actionName = isCurrentlyHoliday ? 'mengaktifkan kembali (masuk)' : 'meliburkan';
+        const res = await apiRequest('/api/cash/holidays', {
+          method: 'POST',
+          body: { week_number: week, is_holiday: !isCurrentlyHoliday }
+        });
+        if (!res.ok) {
+          showToast(res.data?.error || `Gagal ${actionName} minggu ${week}.`, 'error');
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = prevText;
+          }
+          return;
+        }
+        showToast(res.data?.message || `Minggu ${week} berhasil diperbarui.`, 'success');
+        state.cashHolidayWeeks = res.data?.holiday_weeks || [];
+        if (res.data?.active_weeks_count) {
+          state.cashSettings.active_weeks_count = res.data.active_weeks_count;
+        }
+        await loadCashModule(container, { silent: true });
+      } catch {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = prevText;
+        }
+        showToast('Terjadi kesalahan jaringan saat memperbarui status minggu libur.', 'error');
+      }
+    };
+
+    document.getElementById('btn-toggle-cash-holiday')?.addEventListener('click', (e) => {
+      const week = parseInt(e.currentTarget.getAttribute('data-week'), 10);
+      if (week) handleToggleHoliday(week, e.currentTarget);
+    });
+
+    document.getElementById('btn-toggle-cash-holiday-mobile')?.addEventListener('click', (e) => {
+      const week = parseInt(e.currentTarget.getAttribute('data-week'), 10);
+      if (week) handleToggleHoliday(week, e.currentTarget);
+    });
   }
 
   /**
@@ -3426,7 +3605,11 @@
     const maxWeek = Number(state.cashSettings.active_weeks_count || 1);
     const hasWeek1 = (state.cashRecap && state.cashRecap.some((s) => s.weeks && s.weeks[1]));
     const startWeek = hasWeek1 ? 1 : 2;
-    const totalWeeks = Math.max(0, maxWeek - startWeek + 1);
+    const holidayWeeksSet = new Set(state.cashHolidayWeeks || []);
+    let totalWeeks = 0;
+    for (let w = startWeek; w <= maxWeek; w++) {
+      if (!holidayWeeksSet.has(w)) totalWeeks++;
+    }
 
     // 1. Perbarui state lokal
     const studentObj = state.cashRecap.find((s) => Number(s.student_id) === Number(studentId));
@@ -3470,11 +3653,13 @@
 
     // 3. Perbarui seluruh tombol/chip minggu yang cocok (desktop dan mobile)
     const matchingBtns = document.querySelectorAll(`[data-toggle-cash^="${Number(studentId)}:${Number(weekNumber)}:"]`);
+    const isHol = holidayWeeksSet.has(Number(weekNumber));
     matchingBtns.forEach((btn) => {
       btn.classList.toggle('paid', Boolean(isPaid));
-      btn.classList.toggle('unpaid', !isPaid);
+      btn.classList.toggle('unpaid', !isPaid && !isHol);
+      btn.classList.toggle('holiday', !isPaid && isHol);
       btn.setAttribute('data-toggle-cash', `${Number(studentId)}:${Number(weekNumber)}:${isPaid ? 0 : 1}`);
-      btn.setAttribute('title', isPaid ? `Minggu ${weekNumber}: Lunas` : `Minggu ${weekNumber}: Belum Lunas`);
+      btn.setAttribute('title', isPaid ? (isHol ? `Minggu ${weekNumber}: Lunas (Dibayar di Minggu Libur)` : `Minggu ${weekNumber}: Lunas`) : (isHol ? `Minggu ${weekNumber}: Libur Kas (Bebas Tagihan)` : `Minggu ${weekNumber}: Belum Lunas`));
       btn.textContent = isPaid ? '✓' : '—';
     });
   }
@@ -3487,19 +3672,25 @@
     const hasWeek1 = (state.cashRecap && state.cashRecap.some((s) => s.weeks && s.weeks[1]));
     const startWeek = hasWeek1 ? 1 : 2;
     const endWeek = Math.max(startWeek, maxWeek);
+    const holidayWeeksSet = new Set(state.cashHolidayWeeks || []);
 
     const weekChips = [];
     for (let w = startWeek; w <= endWeek; w++) {
+      const isHol = holidayWeeksSet.has(w);
       const paid = Boolean(studentObj.weeks && studentObj.weeks[w]);
+      const btnClass = paid ? 'paid' : (isHol ? 'holiday' : 'unpaid');
+      const btnTitle = isHol
+        ? `Minggu ${w}: ${paid ? 'Lunas (Dibayar di Minggu Libur)' : 'Libur Kas (Bebas Tagihan)'}`
+        : `Minggu ${w}: ${paid ? 'Lunas' : 'Belum Lunas'}`;
       weekChips.push(`
         <div class="cash-card-week-slot">
-          <span class="cash-card-week-label">Minggu ${w}</span>
+          <span class="cash-card-week-label">Minggu ${w}${isHol ? ' (Libur)' : ''}</span>
           <button
             type="button"
-            class="cash-week-btn ${paid ? 'paid' : 'unpaid'}"
+            class="cash-week-btn ${btnClass}"
             style="width: 40px; height: 40px; font-size: 0.92rem;"
             ${isEditable ? `data-toggle-cash="${Number(studentObj.student_id)}:${w}:${paid ? 0 : 1}"` : 'disabled'}
-            title="Minggu ${w}: ${paid ? 'Lunas' : 'Belum Lunas'}"
+            title="${btnTitle}"
           >
             ${paid ? '✓' : '—'}
           </button>
@@ -5093,7 +5284,7 @@
     const CHECK_ICON_SVG = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 
     const currentUserId = state.currentUser?.id || state.currentUser?.phone_number || 'default';
-    const chatStorageKey = `aras_ai_chat_user_${currentUserId}`;
+    const chatStorageKey = `kastor_ai_chat_user_${currentUserId}`;
 
     // Ambil riwayat chat terisolasi per user
     let chatHistory = [];
@@ -5631,7 +5822,7 @@
         <section class="panel">
           <div class="panel-header">
             <div class="panel-title-group">
-              <h2 class="panel-title">Output Diagnostik /ping ARAS 1.0</h2>
+              <h2 class="panel-title">Output Diagnostik /ping Kastor AI</h2>
               <p class="panel-subtitle">Dihasilkan langsung dari modul sistem bot (<code>getSystemStatusInfo</code>)</p>
             </div>
           </div>
@@ -5883,7 +6074,7 @@
               class="subtab-btn ${state.devTab === 'ping' ? 'active' : ''}"
               data-dev-tab="ping"
             >
-              Output /ping ARAS 1.0
+              Output /ping Kastor AI
             </button>
             <button
               type="button"
@@ -6331,6 +6522,15 @@
         return;
       }
     });
+
+    // Mobile Bottom Nav Window Resize Listener (Throttled with requestAnimationFrame)
+    let navPillResizeFrame = null;
+    window.addEventListener('resize', () => {
+      if (navPillResizeFrame) cancelAnimationFrame(navPillResizeFrame);
+      navPillResizeFrame = requestAnimationFrame(() => {
+        updateBottomNavSlidingPill({ instant: true });
+      });
+    }, { passive: true });
   }
 
   // Initialize on DOMContentLoaded

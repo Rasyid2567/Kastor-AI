@@ -1,4 +1,4 @@
-import { db, getLinkedGroups, resolveClassGroupId } from '../../database/schema.js';
+import { db, getLinkedGroups, resolveClassGroupId, isGroupDisabled } from '../../database/schema.js';
 import cron from 'node-cron';
 import fs from 'fs';
 import path from 'path';
@@ -307,6 +307,9 @@ export function setupAssignmentCron(sock) {
 
         const targetGroups = [c.group_id, ...getLinkedGroups(c.group_id)];
         for (const targetJid of targetGroups) {
+          if (isGroupDisabled(targetJid)) {
+            continue;
+          }
           try {
             await sock.sendMessage(targetJid, { text: msg });
           } catch (err) {

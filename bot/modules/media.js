@@ -55,7 +55,7 @@ export async function performOcr(imageBuffer) {
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
             'HTTP-Referer': 'https://github.com/syid/whatsapp-classroom-bot',
-            'X-Title': 'ARAS Classroom Bot'
+            'X-Title': 'Kastor AI Classroom Bot'
           },
           body: JSON.stringify({
             model,
@@ -158,7 +158,7 @@ export async function convertToSticker(mediaBuffer, isVideo = false) {
       ? [
           '-y', '-i', tmpInput,
           '-t', '7',
-          '-vf', 'scale=512:512:force_original_aspect_ratio=decrease,fps=15,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000',
+          '-vf', 'scale=512:512:force_original_aspect_ratio=decrease:flags=lanczos,scale=trunc(iw/2)*2:trunc(ih/2)*2,fps=15',
           '-vcodec', 'libwebp',
           '-lossless', '0',
           '-compression_level', '4',
@@ -169,11 +169,11 @@ export async function convertToSticker(mediaBuffer, isVideo = false) {
         ]
       : [
           '-y', '-i', tmpInput,
-          '-vf', 'scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000',
+          '-vf', 'scale=512:512:force_original_aspect_ratio=decrease:flags=lanczos,scale=trunc(iw/2)*2:trunc(ih/2)*2,unsharp=3:3:0.6:3:3:0.0',
           '-vcodec', 'libwebp',
           '-lossless', '0',
           '-compression_level', '4',
-          '-q:v', '75',
+          '-q:v', '78',
           '-loop', '0',
           tmpOutput
         ];
@@ -410,7 +410,7 @@ export async function generateBratVideo(text) {
         '-y',
         '-framerate', '2',
         '-i', path.join(tmpDir, 'frame_%03d.png'),
-        '-vf', 'scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000',
+        '-vf', 'scale=512:512:force_original_aspect_ratio=decrease:flags=lanczos,scale=trunc(iw/2)*2:trunc(ih/2)*2,unsharp=3:3:0.6:3:3:0.0',
         '-vcodec', 'libwebp',
         '-lossless', '0',
         '-compression_level', '4',
@@ -441,8 +441,9 @@ export async function generateStickerMeme(imageBuffer, topText = '', bottomText 
 
     // Siapkan filter drawtext untuk teks atas dan bawah
     const filters = [
-      'scale=512:512:force_original_aspect_ratio=decrease',
-      'pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000'
+      'scale=512:512:force_original_aspect_ratio=decrease:flags=lanczos',
+      'scale=trunc(iw/2)*2:trunc(ih/2)*2',
+      'unsharp=3:3:0.6:3:3:0.0'
     ];
 
     const cleanTop = (topText || '').trim();

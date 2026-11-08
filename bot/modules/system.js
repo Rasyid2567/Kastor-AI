@@ -77,7 +77,7 @@ function getDiskUsage() {
  * Mengambil ringkasan status sistem dan performa bot untuk perintah /ping & /status
  * @param {number|object|null} msgTimestamp Timestamp pesan Baileys (detik)
  * @param {number} [startPerf] performance.now() saat command mulai diproses
- * @returns {string} Pesan status terformat ARAS 1.0
+ * @returns {string} Pesan status terformat Kastor AI
  */
 export function getSystemStatusInfo(msgTimestamp, startPerf) {
   const line = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
@@ -154,7 +154,7 @@ export function getSystemStatusInfo(msgTimestamp, startPerf) {
   const irqPct = ((irq / totalCpuTime) * 100).toFixed(2);
 
   return `⚡ STATUS BOT & SERVER
-ARAS 1.0
+Kastor AI
 
 ${line}
 

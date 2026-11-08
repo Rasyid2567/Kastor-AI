@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * KASTOR AI / ARAS 1.0 — MILESTONE 1 BEHAVIORAL & RBAC STRESS VERIFIER
+ * KASTOR AI — MILESTONE 1 BEHAVIORAL & RBAC STRESS VERIFIER
  * Challenger 2 Automated Empirical Test Suite
  * ============================================================================
  *
@@ -34,7 +34,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../..');
 const prodDbPath = path.join(projectRoot, 'database.sqlite');
-const tempDbPath = `/tmp/aras_m1_challenger_${process.pid}.sqlite`;
+const tempDbPath = `/tmp/kastor_m1_challenger_${process.pid}.sqlite`;
 
 // ----------------------------------------------------------------------------
 // TEST REPORTING HARNESS
@@ -78,7 +78,7 @@ function assertTest(suite, code, name, condition, details = '') {
 // DATABASE ISOLATION SETUP
 // ----------------------------------------------------------------------------
 console.log('================================================================================');
-console.log('🧪 KASTOR AI / ARAS 1.0 — CHALLENGER 2 BEHAVIORAL & RBAC STRESS HARNESS');
+console.log('🧪 KASTOR AI — CHALLENGER 2 BEHAVIORAL & RBAC STRESS HARNESS');
 console.log('================================================================================');
 
 if (fs.existsSync(prodDbPath)) {
@@ -127,6 +127,15 @@ db.prepare(`
   VALUES (?, ?, ?, ?, ?)
 `).run('6285155054456', defaultPwHash, 'DEVELOPER', null, 'Rasyid (Developer)');
 
+// Pastikan class_roles sinkron dengan test users
+const upsertRole = db.prepare(`
+  INSERT OR REPLACE INTO class_roles (group_id, phone_number, role)
+  VALUES (?, ?, ?)
+`);
+upsertRole.run('120363401603280130@g.us', '6282118116660@s.whatsapp.net', 'KETUA');
+upsertRole.run('120363401603280130@g.us', '6285730892239@s.whatsapp.net', 'SEKRETARIS');
+upsertRole.run('120363401603280130@g.us', '6285655662884@s.whatsapp.net', 'BENDAHARA');
+
 // ----------------------------------------------------------------------------
 // HTTP CLIENT HELPER
 // ----------------------------------------------------------------------------
@@ -157,12 +166,12 @@ function createHttpClient(baseUrl) {
       const res = await fetch(`${baseUrl}${urlPath}`, opts);
       const setCookie = res.headers.get('set-cookie');
       if (setCookie) {
-        const match = setCookie.match(/aras_session=([^;]*)/);
+        const match = setCookie.match(/(?:kastor_session|aras_session)=([^;]*)/);
         if (match) {
           if (match[1] === '' || setCookie.includes('Max-Age=0')) {
             cookieJar = '';
           } else {
-            cookieJar = `aras_session=${match[1]}`;
+            cookieJar = `kastor_session=${match[1]}`;
           }
         }
       }
@@ -220,7 +229,7 @@ try {
 
   // 1.1 Solid --surface-1 background resolution
   {
-    const surface1Regex = /--surface-1\s*:\s*(#111827|#11151a)/i;
+    const surface1Regex = /--surface-1\s*:\s*(#111827|#11151a|#0e131f)/i;
     const hasSurface1Token = surface1Regex.test(cssContent);
 
     const modalCardHasSurface1 =
@@ -229,7 +238,7 @@ try {
     const bottomSheetHasSurface1 =
       /(\.bottom-sheet|\.sheet-more-nav)\s*\{[^}]*background-color\s*:\s*var\(--surface-1\)\s*!important/i.test(cssContent);
 
-    const overlayRegex = /--overlay\s*:\s*rgba\(\s*5\s*,\s*8\s*,\s*14\s*,\s*0\.72\s*\)/i;
+    const overlayRegex = /--overlay\s*:\s*rgba\(\s*5\s*,\s*8\s*,\s*14\s*,\s*(0\.72|0\.85)\s*\)/i;
     const hasOverlayToken = overlayRegex.test(cssContent);
 
     const jsEnforcesSurface1Modal = jsContent.includes("container.style.backgroundColor = 'var(--surface-1)'");

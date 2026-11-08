@@ -42,7 +42,8 @@ yarn-error.log*
 # Test Outputs & Coverage
 coverage/
 .coverage/
-/tmp/aras_*
+/tmp/kastor_*
+.playwright-mcp/
 
 # IDE & Editor Settings (Optional local user files)
 .vscode/*

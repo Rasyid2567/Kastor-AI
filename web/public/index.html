@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="description" content="Kastor AI — ARAS 1.0 Dashboard Administrasi Kelas &amp; Sistem Manajemen Akademik" />
+  <meta name="description" content="Kastor AI — Dashboard Administrasi Kelas &amp; Sistem Manajemen Akademik" />
   <meta name="theme-color" content="#090D16" />
-  <title>Kastor AI — Dashboard Administrasi Kelas (ARAS 1.0)</title>
+  <title>Kastor AI — Dashboard Administrasi Kelas</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
   <style>html,body{background-color:#090D16!important;background-image:none!important;color:#F8FAFC;margin:0;padding:0;font-family:'Inter',system-ui,sans-serif;}#app,#app-shell,.app-shell,#auth-view,.auth-view{background-color:#090D16!important;background-image:none!important;}.hidden,[hidden],#app-shell.hidden,.app-shell.hidden,#auth-view.hidden,.auth-view.hidden{display:none!important;}</style>
-  <link rel="stylesheet" href="/styles.css?v=42" />
+  <link rel="stylesheet" href="/styles.css?v=49" />
 </head>
 <body>
   <!-- Notifikasi Toast Non-intrusif (Success / Error / Info) -->
@@ -32,9 +32,9 @@
         </div>
         <div class="brand-text">
           <div class="brand-badge-row">
-            <span class="version-pill">ARAS 1.0</span>
+            <span class="version-pill">Kastor AI</span>
             <span class="dot-sep">•</span>
-            <span class="brand-subtitle">Kastor AI</span>
+            <span class="brand-subtitle">Portal Pengurus</span>
           </div>
           <h1 id="auth-brand-title" class="auth-title">Portal Administrasi Kelas</h1>
           <p class="auth-desc">Akses terpusat untuk Pengurus Kelas &amp; Developer dengan otorisasi berbasis peran (RBAC).</p>
@@ -216,7 +216,7 @@
           </div>
           <div class="sidebar-brand-meta">
             <span class="sidebar-brand-title">Kastor AI</span>
-            <span class="sidebar-brand-ver">ARAS 1.0 • Classroom OS</span>
+            <span class="sidebar-brand-ver">Classroom Management OS</span>
           </div>
           <button type="button" id="btn-close-sidebar" class="btn-close-drawer hide-desktop" aria-label="Tutup menu navigasi">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -312,6 +312,9 @@
          64px fixed, --surface-1, border-atas --border
          ========================================================= -->
     <nav id="mobile-bottom-nav" class="mobile-bottom-nav hide-desktop" aria-label="Navigasi Bawah Seluler">
+      <!-- Sliding Pill Indicator -->
+      <div id="nav-sliding-pill" class="nav-sliding-pill" aria-hidden="true"></div>
+
       <!-- Slot 1: Dashboard -->
       <button type="button" class="nav-slot-btn active" data-nav-slot="dashboard" data-navigate="dashboard" aria-label="Menu Dashboard">
         <span class="nav-slot-icon-box">
@@ -472,6 +475,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=44"></script>
+  <script src="/demo-sandbox.js?v=49"></script>
+  <script src="/app.js?v=49"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@ import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
-import { db } from '../../database/schema.js';
+import { db, getCashHolidayWeeks, setCashHolidayWeek, removeCashHolidayWeek } from '../../database/schema.js';
 import { calculateWeekNumber } from '../../bot/modules/schedule.js';
 import { parseChecklistText, getCashRecap } from '../../bot/modules/cash.js';
 import {
@@ -820,7 +820,11 @@ export async function handleApiRequest(req, res, reqUrl) {
       const activeWeeks = Number(cashSettings?.active_weeks_count || 0);
       const hasWeek1 = db.prepare('SELECT 1 FROM cash_payments WHERE group_id = ? AND week_number = 1 AND is_paid = 1 LIMIT 1').get(targetGroupId);
       const startWeek = hasWeek1 ? 1 : 2;
-      const totalWeeks = Math.max(0, activeWeeks - startWeek + 1);
+      const holidayWeeks = new Set(getCashHolidayWeeks(targetGroupId));
+      let totalWeeks = 0;
+      for (let w = startWeek; w <= activeWeeks; w++) {
+        if (!holidayWeeks.has(w)) totalWeeks++;
+      }
 
       const studentsPayment = db.prepare(`
         SELECT s.id,
@@ -1305,11 +1309,74 @@ export async function handleApiRequest(req, res, reqUrl) {
         return sendJson(res, 400, { ok: false, error: 'Tipe blok harus TEORI atau BENGKEL.' });
       }
 
+      // 1. Update primary schedule record
       db.prepare(`
         UPDATE schedules
         SET week_number = ?, day_index = ?, block_type = ?, subject_name = ?, teacher_name = ?, room_name = ?, time_start = ?, time_end = ?, notes = ?
         WHERE id = ? AND group_id = ?
       `).run(weekNumber, dayIndex, blockType, subjectName, teacherName, roomName, timeStart, timeEnd, notes, scheduleId, targetGroupId);
+
+      // 2. Synchronize all sibling days (Monday - Friday) in the edited week for this block schedule
+      const defaultHours = {
+        1: { start: '07:50', end: '15:30' },
+        2: { start: '07:00', end: '15:30' },
+        3: { start: '07:00', end: '15:30' },
+        4: { start: '07:00', end: '15:00' },
+        5: { start: '07:00', end: '15:15' }
+      };
+
+      if (blockType === 'BENGKEL' || existing.block_type === 'BENGKEL') {
+        // For BENGKEL block weeks: synchronize all Bengkel rows in this week (and old week if moved)
+        db.prepare(`
+          UPDATE schedules
+          SET week_number = ?, block_type = ?, subject_name = ?, teacher_name = ?, room_name = ?, notes = ?
+          WHERE group_id = ? AND (week_number = ? OR week_number = ?) AND id != ?
+            AND (
+              subject_name = ?
+              OR block_type = 'BENGKEL'
+            )
+        `).run(weekNumber, blockType, subjectName, teacherName, roomName, notes, targetGroupId, existing.week_number, weekNumber, scheduleId, existing.subject_name);
+
+        // Deduplicate and ensure all 5 school days (1 to 5) exist for this week
+        for (let d = 1; d <= 5; d++) {
+          const dayRows = db.prepare(`
+            SELECT id, time_start, time_end FROM schedules
+            WHERE group_id = ? AND week_number = ? AND day_index = ? AND block_type = 'BENGKEL'
+            ORDER BY time_start ASC, id ASC
+          `).all(targetGroupId, weekNumber, d);
+
+          if (dayRows.length === 0) {
+            const h = defaultHours[d] || { start: '07:00', end: '15:30' };
+            db.prepare(`
+              INSERT INTO schedules (group_id, week_number, day_index, block_type, subject_name, teacher_name, room_name, time_start, time_end, notes)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(targetGroupId, weekNumber, d, blockType, subjectName, teacherName, roomName, h.start, h.end, notes);
+          } else if (dayRows.length > 1) {
+            const keepRow = dayRows.find(r => r.id === scheduleId) || dayRows[0];
+            const duplicateIds = dayRows.filter(r => r.id !== keepRow.id).map(r => r.id);
+            for (const dupId of duplicateIds) {
+              db.prepare('DELETE FROM schedules WHERE id = ? AND group_id = ?').run(dupId, targetGroupId);
+            }
+          }
+        }
+      } else {
+        // For TEORI rolling weeks: synchronize matching subjects rolling across Monday-Friday
+        db.prepare(`
+          UPDATE schedules
+          SET week_number = ?, block_type = ?, subject_name = ?, teacher_name = ?, room_name = ?, notes = ?
+          WHERE group_id = ? AND week_number = ? AND id != ?
+            AND subject_name = ?
+        `).run(weekNumber, blockType, subjectName, teacherName, roomName, notes, targetGroupId, existing.week_number, scheduleId, existing.subject_name);
+      }
+
+      const countSynchronized = db.prepare(`
+        SELECT COUNT(*) as count FROM schedules
+        WHERE group_id = ? AND week_number = ?
+          AND (
+            subject_name = ?
+            OR (block_type = 'BENGKEL' AND ? = 'BENGKEL')
+          )
+      `).get(targetGroupId, weekNumber, subjectName, blockType)?.count || 1;
 
       const updated = db.prepare('SELECT * FROM schedules WHERE id = ?').get(scheduleId);
 
@@ -1324,8 +1391,10 @@ export async function handleApiRequest(req, res, reqUrl) {
 
       return sendJson(res, 200, {
         ok: true,
+        success: true,
         message: 'Jadwal berhasil diperbarui.',
-        schedule: updated
+        schedule: updated,
+        count_synchronized: countSynchronized
       });
     }
 
@@ -1367,6 +1436,8 @@ export async function handleApiRequest(req, res, reqUrl) {
       WHERE cr.group_id = ? AND cr.role = 'BENDAHARA'
     `).all(targetGroupId);
 
+    const holidayWeeks = getCashHolidayWeeks(targetGroupId);
+
     return sendJson(res, 200, {
       ok: true,
       active_school_week: activeSchoolWeek,
@@ -1376,6 +1447,7 @@ export async function handleApiRequest(req, res, reqUrl) {
         active_weeks_count: Number(settings.active_weeks_count || 0),
         updated_at: settings.updated_at || null
       },
+      holiday_weeks: holidayWeeks,
       treasurers: treasurers.map(t => ({
         phone_number: t.phone_number,
         name: t.name || null
@@ -1455,7 +1527,12 @@ export async function handleApiRequest(req, res, reqUrl) {
     const hasWeek1 = db.prepare('SELECT 1 FROM cash_payments WHERE group_id = ? AND week_number = 1 AND is_paid = 1 LIMIT 1').get(targetGroupId);
     const startWeek = hasWeek1 ? 1 : 2;
     const maxWeek = Number(settings?.active_weeks_count || 1);
-    const totalWeeks = Math.max(0, maxWeek - startWeek + 1);
+    const holidayWeeksList = getCashHolidayWeeks(targetGroupId);
+    const holidayWeeksSet = new Set(holidayWeeksList);
+    let totalWeeks = 0;
+    for (let w = startWeek; w <= maxWeek; w++) {
+      if (!holidayWeeksSet.has(w)) totalWeeks++;
+    }
 
     const recapList = students.map(s => {
       const weeksObj = paymentMap.get(s.id) || {};
@@ -1490,6 +1567,7 @@ export async function handleApiRequest(req, res, reqUrl) {
       active_school_week: activeSchoolWeek,
       weekly_fee: weeklyFee,
       active_weeks_count: activeWeeks,
+      holiday_weeks: holidayWeeksList,
       students: recapList,
       formatted_text: formattedText
     });
@@ -1555,6 +1633,63 @@ export async function handleApiRequest(req, res, reqUrl) {
       ok: true,
       message: 'Status pembayaran kas berhasil diperbarui.',
       updated_count: updatedCount
+    });
+  }
+
+  if (pathname === '/api/cash/holidays' && method === 'GET') {
+    if (!targetGroupId) {
+      return sendJson(res, 400, { ok: false, error: 'Konteks kelas tidak valid atau belum dipilih.' });
+    }
+    const holidayWeeks = getCashHolidayWeeks(targetGroupId);
+    return sendJson(res, 200, {
+      ok: true,
+      holiday_weeks: holidayWeeks
+    });
+  }
+
+  if (pathname === '/api/cash/holidays' && method === 'POST') {
+    if (!targetGroupId) {
+      return sendJson(res, 400, { ok: false, error: 'Konteks kelas tidak valid atau belum dipilih.' });
+    }
+    const weekNum = parseInt(body.week_number, 10);
+    if (isNaN(weekNum) || weekNum < 1 || weekNum > 52) {
+      return sendJson(res, 400, { ok: false, error: 'Nomor minggu tidak valid (harus antara 1 sampai 52).' });
+    }
+
+    const isHoliday = body.is_holiday === undefined
+      ? true
+      : (body.is_holiday === true || body.is_holiday === 1 || body.is_holiday === 'true' || body.is_holiday === '1');
+
+    if (isHoliday) {
+      setCashHolidayWeek(targetGroupId, weekNum, session.phone_number || session.role);
+    } else {
+      removeCashHolidayWeek(targetGroupId, weekNum);
+    }
+
+    // Pastikan cash_settings telah terinisialisasi untuk targetGroupId tanpa memperluas active_weeks_count secara artifisial
+    db.prepare(`
+      INSERT INTO cash_settings (group_id, weekly_fee, active_weeks_count, updated_at)
+      VALUES (?, 5000, 0, CURRENT_TIMESTAMP)
+      ON CONFLICT(group_id) DO NOTHING
+    `).run(targetGroupId);
+
+    writeAuditLog({
+      user_id: session.user_id,
+      phone_number: session.phone_number,
+      role: session.role,
+      group_id: targetGroupId,
+      action: 'CASH_HOLIDAY_UPDATE',
+      details: { week_number: weekNum, is_holiday: isHoliday }
+    });
+
+    const updatedHolidays = getCashHolidayWeeks(targetGroupId);
+    const settings = db.prepare('SELECT active_weeks_count FROM cash_settings WHERE group_id = ?').get(targetGroupId);
+
+    return sendJson(res, 200, {
+      ok: true,
+      message: isHoliday ? `Minggu ${weekNum} berhasil diset sebagai libur.` : `Minggu ${weekNum} berhasil diaktifkan kembali (masuk).`,
+      holiday_weeks: updatedHolidays,
+      active_weeks_count: Number(settings?.active_weeks_count || 0)
     });
   }
 

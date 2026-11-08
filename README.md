@@ -8,7 +8,7 @@
   <a href="https://deno.com"><img src="https://img.shields.io/badge/Runtime-Deno%20v2.x-000000?style=flat-square&logo=deno" alt="Deno 2"></a>
   <a href="https://bun.sh"><img src="https://img.shields.io/badge/Runtime-Bun%20v1.x-fbf0df?style=flat-square&logo=bun" alt="Bun 1"></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Runtime-Node.js%20v20%2B-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js 20+"></a>
-  <a href="https://github.com/Rasyid2567/Kastor-AI/releases"><img src="https://img.shields.io/badge/Release-v1.0.0--ARAS-10B981.svg?style=flat-square" alt="Version"></a>
+  <a href="https://github.com/Rasyid2567/Kastor-AI/releases"><img src="https://img.shields.io/badge/Release-v1.0.0--Kastor--AI-10B981.svg?style=flat-square" alt="Version"></a>
   <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-Welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome"></a>
 </p>
 
@@ -31,7 +31,7 @@
 
 ## 📖 Tentang Kastor AI
 
-**Kastor AI (ARAS 1.0)** adalah platform manajemen kelas modern terintegrasi yang dirancang untuk memecahkan kompleksitas administrasi akademik di Sekolah Menengah Kejuruan (SMK) dan sekolah umum. 
+**Kastor AI** adalah platform manajemen kelas modern terintegrasi yang dirancang untuk memecahkan kompleksitas administrasi akademik di Sekolah Menengah Kejuruan (SMK) dan sekolah umum. 
 
 Sistem ini menggabungkan **Bot WhatsApp Multi-Grup** berbasis socket Baileys dengan **Web Administration Dashboard** modern (Midnight Slate Dark Theme). Keduanya berbagi basis data lokal berkinerja tinggi melalui mode **SQLite WAL (Write-Ahead Logging)**, memungkinkan pembacaan dan penulisan bersamaan secara instan tanpa konflik (*zero lock contention*).
 
@@ -49,7 +49,7 @@ Sistem ini menggabungkan **Bot WhatsApp Multi-Grup** berbasis socket Baileys den
 Dashboard administrasi kelas dibangun menggunakan antarmuka murni **Vanilla ES6 Modules** tanpa overhead bundler eksternal, mengusung palet warna **Midnight Slate Dark Theme** yang elegan dan responsif di peramban desktop maupun ponsel pintar:
 
 <p align="center">
-  <img src="assets/dashboard-preview.png" alt="Pratinjau Web Dashboard ARAS 1.0" width="100%">
+  <img src="assets/dashboard-preview.png" alt="Pratinjau Web Dashboard Kastor AI" width="100%">
 </p>
 
 ---

@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { db } from '../../database/schema.js';
 
-export const SESSION_COOKIE_NAME = 'aras_session';
+export const SESSION_COOKIE_NAME = 'kastor_session';
 export const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 jam
 export const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 menit
 export const MAX_FAILED_ATTEMPTS = 5;
@@ -404,7 +404,7 @@ export function destroySession(sessionId) {
 export function getSessionFromRequest(req) {
   const cookieHeader = req?.headers?.cookie || '';
   const cookies = parseCookies(cookieHeader);
-  const sessionId = cookies[SESSION_COOKIE_NAME];
+  const sessionId = cookies[SESSION_COOKIE_NAME] || cookies['aras_session'];
   if (!sessionId) return null;
 
   const session = db.prepare(`

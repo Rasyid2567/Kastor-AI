@@ -1,4 +1,4 @@
-import { db, resolveClassGroupId } from '../../database/schema.js';
+import { db, resolveClassGroupId, getCashHolidayWeeks } from '../../database/schema.js';
 import * as xlsx from 'xlsx';
 import { resolveLidToPhone, normalizeIndonesianPhone } from './assignments.js';
 
@@ -305,7 +305,13 @@ export function getCashRecap(groupId) {
   const hasWeek1 = db.prepare('SELECT 1 FROM cash_payments WHERE group_id = ? AND week_number = 1 AND is_paid = 1 LIMIT 1').get(groupId);
   const startWeek = hasWeek1 ? 1 : 2;
   const maxWeek = Number(settings.active_weeks_count || 1);
-  const totalWeeks = Math.max(0, maxWeek - startWeek + 1);
+  const holidayWeeks = new Set(getCashHolidayWeeks(groupId));
+  let totalWeeks = 0;
+  for (let w = startWeek; w <= maxWeek; w++) {
+    if (!holidayWeeks.has(w)) {
+      totalWeeks++;
+    }
+  }
 
   const students = db.prepare(`
     SELECT s.id, s.student_number, s.name,
@@ -408,7 +414,13 @@ export function getStudentCashBill(groupId, senderJid, targetQuery = null) {
   const hasWeek1 = db.prepare('SELECT 1 FROM cash_payments WHERE group_id = ? AND week_number = 1 AND is_paid = 1 LIMIT 1').get(groupId);
   const startWeek = hasWeek1 ? 1 : 2;
   const maxWeek = Number(settings.active_weeks_count || 1);
-  const totalWeeks = Math.max(0, maxWeek - startWeek + 1);
+  const holidayWeeks = new Set(getCashHolidayWeeks(groupId));
+  let totalWeeks = 0;
+  for (let w = startWeek; w <= maxWeek; w++) {
+    if (!holidayWeeks.has(w)) {
+      totalWeeks++;
+    }
+  }
 
   // Hitung pembayaran kas siswa
   const paymentRecord = db.prepare(`

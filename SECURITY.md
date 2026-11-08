@@ -8,7 +8,7 @@ Kastor AI menangani data administrasi kelas, autentikasi pengurus, dan koneksi s
 
 | Versi | Didukung |
 |---|---|
-| `1.0.x` (ARAS 1.0) | ✅ Ya |
+| `1.0.x` (Kastor AI) | ✅ Ya |
 | `< 1.0.0` | ❌ Tidak |
 
 ---

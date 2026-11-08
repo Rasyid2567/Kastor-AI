@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * KASTOR AI / ARAS 1.0 — WEB DASHBOARD AUTOMATED QA & SECURITY TEST SUITE
+ * KASTOR AI — WEB DASHBOARD AUTOMATED QA & SECURITY TEST SUITE
  * ============================================================================
  * Menguji seluruh skenario autentikasi, RBAC, Anti-IDOR / Class Isolation,
  * CRUD administrasi kelas, pencabutan jabatan real-time, proteksi SQLi/XSS,
@@ -8,7 +8,7 @@
  *
  * ATURAN PENTING:
  * TIDAK MENYENTUH DATABASE PRODUKSI `database.sqlite`!
- * Salinan database dibuat di `/tmp/aras_web_test_${process.pid}.sqlite`
+ * Salinan database dibuat di `/tmp/kastor_web_test_${process.pid}.sqlite`
  * SEBELUM modul database/server di-import, dan dihapus pada blok `finally`.
  * ============================================================================
  */
@@ -16,11 +16,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { TEST_CONSTANTS, seedTestDatabase } from './setup-test-db.js';
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const tempDbPath = `/tmp/aras_web_test_${process.pid}.sqlite`;
+const tempDbPath = `/tmp/kastor_web_test_${process.pid}.sqlite`;
 
 const projectRoot = path.resolve(__dirname, '../..');
 
@@ -35,7 +33,8 @@ process.env.DATABASE_PATH = tempDbPath;
 process.env.DEVELOPER_NUMBER = process.env.DEVELOPER_NUMBER || '6285155054456';
 
 // 2. Dynamic import setelah process.env.DATABASE_PATH terpasang
-const { db, initDatabase } = await import('../../database/schema.js');
+const { TEST_CONSTANTS, seedTestDatabase } = await import('./setup-test-db.js');
+const { db, initDatabase, getCashHolidayWeeks, setCashHolidayWeek, removeCashHolidayWeek } = await import('../../database/schema.js');
 const { createWebServer } = await import('../server.js');
 const { SESSION_COOKIE_NAME } = await import('../src/auth.js');
 const {
@@ -278,7 +277,7 @@ try {
     });
 
     assert(loginRes.status === 200, 'AUTH-05a: Login valid mengembalikan 200 OK', `Status: ${loginRes.status}`);
-    assert(loginRes.setCookie.includes(`${SESSION_COOKIE_NAME}=`), 'AUTH-05b: Set-Cookie mengandung aras_session');
+    assert(loginRes.setCookie.includes(`${SESSION_COOKIE_NAME}=`), 'AUTH-05b: Set-Cookie mengandung kastor_session');
     assert(loginRes.setCookie.includes('HttpOnly'), 'AUTH-05c: Cookie memiliki atribut HttpOnly');
     assert(loginRes.setCookie.includes('SameSite=Lax'), 'AUTH-05d: Cookie memiliki atribut SameSite=Lax');
 
@@ -396,6 +395,26 @@ try {
       body: { student_id: sampleStudentId, week_number: 1, is_paid: true }
     });
     assert(payRes.status === 200, 'RBAC-BENDAHARA-04: Bendahara dapat mencatat POST /api/cash/payments (200)');
+
+    // Bendahara dapat mengatur minggu libur kas (POST /api/cash/holidays)
+    const holidayRes = await bendaharaClient.request('POST', '/api/cash/holidays', {
+      body: { week_number: 3, is_holiday: true }
+    });
+    assert(holidayRes.status === 200, 'RBAC-BENDAHARA-04b: Bendahara dapat menandai minggu libur (200)');
+    assert(holidayRes.data?.holiday_weeks?.includes(3), 'Response holiday_weeks harus memuat minggu 3');
+
+    // Ketua ditolak saat mencoba mengatur minggu libur kas
+    const ketuaHolidayRes = await ketuaClient.request('POST', '/api/cash/holidays', {
+      body: { week_number: 3, is_holiday: false }
+    });
+    assert(ketuaHolidayRes.status === 403, 'RBAC-KETUA: Non-bendahara ditolak dari POST /api/cash/holidays (403)');
+
+    // Bendahara mengaktifkan kembali minggu 3 (masuk)
+    const restoreHolidayRes = await bendaharaClient.request('POST', '/api/cash/holidays', {
+      body: { week_number: 3, is_holiday: false }
+    });
+    assert(restoreHolidayRes.status === 200, 'RBAC-BENDAHARA-04c: Bendahara dapat mengaktifkan kembali minggu 3 (200)');
+    assert(!restoreHolidayRes.data?.holiday_weeks?.includes(3), 'Response holiday_weeks tidak boleh memuat minggu 3');
 
     // Bendahara dapat membaca daftar siswa (GET /api/students -> 200)
     const stuGetRes = await bendaharaClient.request('GET', '/api/students');
@@ -832,7 +851,9 @@ try {
       'UI-03: Form registrasi TIDAK memiliki dropdown/input pilihan role manual'
     );
 
-    const cssRes = await uiClient.request('GET', '/styles.css');
+    const cssRes = await uiClient.request('GET', '/styles.css', {
+      headers: { 'Sec-Fetch-Dest': 'style', 'Referer': `${baseUrl}/` }
+    });
     assert(cssRes.status === 200, 'UI-04: GET /styles.css mengembalikan 200 OK');
 
     const requiredTokens = [
@@ -853,7 +874,9 @@ try {
     assert(allTokensPresent, 'UI-05: styles.css memuat seluruh token warna wajib dari DESIGN.md');
     assert(cssRes.text.includes('@media (max-width: 1023px)'), 'UI-06: styles.css memiliki aturan layout responsif (@media)');
 
-    const jsRes = await uiClient.request('GET', '/app.js');
+    const jsRes = await uiClient.request('GET', '/app.js', {
+      headers: { 'Sec-Fetch-Dest': 'script', 'Referer': `${baseUrl}/` }
+    });
     if (fs.existsSync(path.join(projectRoot, 'web/public/app.js'))) {
       assert(
         jsRes.status === 200 && (jsRes.headers.get('content-type') || '').includes('javascript'),
@@ -1050,6 +1073,451 @@ try {
       deleteTxRes.status === 200 && deleteTxRes.data?.ok === true,
       'FINANCE-07: Bendahara berhasil menghapus transaksi manual (200 OK)'
     );
+  }
+
+  // =========================================================================
+  // SKENARIO 15: Sinkronisasi Jadwal Blok (PUT /api/schedules/:id) & Integritas Minggu ke-18
+  // =========================================================================
+  console.log('\n--- Skenario 15: Sinkronisasi Jadwal Blok (PUT /api/schedules/:id) & Integritas Minggu ke-18 ---');
+  {
+    // Pastikan ketuaClient dan sekretarisClient login
+    await ketuaClient.request('POST', '/api/auth/login', {
+      body: { phone_number: PHONE_KETUA, password: TEST_PASSWORD }
+    });
+    await sekretarisClient.request('POST', '/api/auth/login', {
+      body: { phone_number: PHONE_SEKRETARIS, password: TEST_PASSWORD }
+    });
+
+    // 15A. Persiapan Data Jadwal Blok Minggu ke-18 dengan kondisi asinkron & baris duplikat di Jumat
+    // - Hari 1 (Senin): 07:50-15:30
+    // - Hari 2 (Selasa): sengaja KOSONG (missing day) untuk menguji auto-populate KBM
+    // - Hari 3 (Rabu): 07:00-15:30
+    // - Hari 4 (Kamis): 07:00-15:00
+    // - Hari 5 (Jumat slot 1): 07:00-15:15
+    // - Hari 5 (Jumat slot 2 - duplikat): 15:15-16:00
+    db.prepare('DELETE FROM schedules WHERE group_id = ? AND week_number = 18').run(CLASS_XI_RPL_C);
+
+    const insertInitialSched = db.prepare(`
+      INSERT INTO schedules (group_id, week_number, day_index, block_type, subject_name, teacher_name, room_name, time_start, time_end, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const mondayRow = insertInitialSched.run(
+      CLASS_XI_RPL_C, 18, 1, 'BENGKEL', 'Mata Pelajaran Pilihan (Bengkel)', 'Guru Bengkel', 'Lab RPL / Bengkel', '07:50', '15:30', 'Wajib Wearpack Lengkap'
+    );
+    const mondayId = Number(mondayRow.lastInsertRowid);
+
+    insertInitialSched.run(
+      CLASS_XI_RPL_C, 18, 3, 'BENGKEL', 'Mata Pelajaran Pilihan (Bengkel)', 'Guru Pengampu MP', 'Lab RPL / Bengkel', '07:00', '15:30', 'Wajib Wearpack Lengkap'
+    );
+    insertInitialSched.run(
+      CLASS_XI_RPL_C, 18, 4, 'BENGKEL', 'Mata Pelajaran Pilihan (Bengkel)', 'Guru Pengampu MP', 'Lab RPL / Bengkel', '07:00', '15:00', 'Wajib Wearpack Lengkap'
+    );
+    insertInitialSched.run(
+      CLASS_XI_RPL_C, 18, 5, 'BENGKEL', 'Mata Pelajaran Pilihan (Bengkel)', 'Guru Pengampu MP', 'Lab RPL / Bengkel', '07:00', '15:15', 'Wajib Wearpack Lengkap'
+    );
+    insertInitialSched.run(
+      CLASS_XI_RPL_C, 18, 5, 'BENGKEL', 'Bengkel / MP', 'Guru Pendamping / Wali Kelas', 'Lab RPL / Bengkel', '15:15', '16:00', 'Wajib Wearpack Lengkap'
+    );
+
+    // 15B. Sekretaris mengedit jadwal blok melalui PUT /api/schedules/:id pada record Senin (mondayId)
+    // Mengubah mapel menjadi 'Kejuruan RPL (Bengkel / Praktik)', guru 'Guru Bengkel', ruang 'Lab RPL / Bengkel'
+    const putRes = await sekretarisClient.request('PUT', `/api/schedules/${mondayId}`, {
+      body: {
+        week_number: 18,
+        day_index: 1,
+        block_type: 'BENGKEL',
+        subject_name: 'Kejuruan RPL (Bengkel / Praktik)',
+        teacher_name: 'Guru Bengkel',
+        room_name: 'Lab RPL / Bengkel',
+        time_start: '07:50',
+        time_end: '15:30',
+        notes: 'Wajib Wearpack Lengkap & Safety Shoes'
+      }
+    });
+
+    assert(
+      putRes.status === 200 && putRes.data?.ok === true && putRes.data?.success === true,
+      'SCHED-SYNC-01: PUT /api/schedules/:id berhasil memperbarui jadwal blok dengan status 200 OK'
+    );
+    assert(
+      putRes.data?.count_synchronized === 5,
+      'SCHED-SYNC-02: count_synchronized pada response mengindikasikan 5 hari KBM tersinkronisasi'
+    );
+
+    // 15C. Verifikasi integritas data database pasca sinkronisasi
+    const week18Rows = db.prepare(`
+      SELECT id, day_index, time_start, time_end, subject_name, teacher_name, room_name, block_type, notes
+      FROM schedules
+      WHERE group_id = ? AND week_number = 18
+      ORDER BY day_index ASC, time_start ASC
+    `).all(CLASS_XI_RPL_C);
+
+    assert(
+      week18Rows.length === 5,
+      `SCHED-SYNC-03: Total baris jadwal Minggu ke-18 tepat 5 baris (Senin-Jumat tanpa duplikasi), didapat ${week18Rows.length}`
+    );
+
+    const distinctDays = [...new Set(week18Rows.map((r) => r.day_index))];
+    assert(
+      distinctDays.length === 5 && [1, 2, 3, 4, 5].every((d) => distinctDays.includes(d)),
+      'SCHED-SYNC-04: Seluruh hari KBM (1: Senin s/d 5: Jumat) lengkap terisi (hari Selasa yang sempat hilang berhasil di-insert otomatis)'
+    );
+
+    // Verifikasi semua baris memiliki mapel, guru, ruang, dan tipe blok yang sama
+    const allConsistent = week18Rows.every((r) =>
+      r.subject_name === 'Kejuruan RPL (Bengkel / Praktik)' &&
+      r.teacher_name === 'Guru Bengkel' &&
+      r.room_name === 'Lab RPL / Bengkel' &&
+      r.block_type === 'BENGKEL'
+    );
+    assert(
+      allConsistent,
+      'SCHED-SYNC-05: Seluruh hari Senin s/d Jumat tersinkronisasi sempurna pada mapel "Kejuruan RPL (Bengkel / Praktik)", guru "Guru Bengkel", dan ruang "Lab RPL / Bengkel"'
+    );
+
+    // Verifikasi jam KBM spesifik tiap hari terjaga (Senin 07:50, Kamis selesai 15:00, Jumat selesai 15:15)
+    const mondayDb = week18Rows.find((r) => r.day_index === 1);
+    const tuesdayDb = week18Rows.find((r) => r.day_index === 2);
+    const thursdayDb = week18Rows.find((r) => r.day_index === 4);
+    const fridayDb = week18Rows.find((r) => r.day_index === 5);
+
+    assert(
+      mondayDb.time_start === '07:50' && mondayDb.time_end === '15:30',
+      'SCHED-SYNC-06: Jam KBM Senin tetap mempertahankan start 07:50 s/d 15:30'
+    );
+    assert(
+      tuesdayDb.time_start === '07:00' && tuesdayDb.time_end === '15:30',
+      'SCHED-SYNC-07: Jam KBM Selasa hasil auto-populate memiliki jam standar 07:00 s/d 15:30'
+    );
+    assert(
+      thursdayDb.time_start === '07:00' && thursdayDb.time_end === '15:00',
+      'SCHED-SYNC-08: Jam KBM Kamis tetap mempertahankan jam pulang 15:00'
+    );
+    assert(
+      fridayDb.time_start === '07:00' && fridayDb.time_end === '15:15',
+      'SCHED-SYNC-09: Jam KBM Jumat tetap mempertahankan jam pulang 15:15 dan baris duplikat sore (15:15-16:00) telah dipangkas bersih'
+    );
+
+    // 15D. Verifikasi GET /api/schedules?week_number=18 menghasilkan data yang konsisten
+    const getWeek18Res = await sekretarisClient.request('GET', '/api/schedules?week_number=18');
+    assert(
+      getWeek18Res.status === 200 && Array.isArray(getWeek18Res.data?.schedules),
+      'SCHED-SYNC-10: GET /api/schedules?week_number=18 mengembalikan status 200 OK'
+    );
+    assert(
+      getWeek18Res.data?.schedules?.length === 5,
+      'SCHED-SYNC-11: GET /api/schedules mengembalikan tepat 5 entri untuk Minggu ke-18'
+    );
+
+    // Deduplikasi frontend simulation (sesuai app.js renderSchedulesView)
+    const uniqueSchedules = [];
+    const seenSubjects = new Set();
+    for (const item of getWeek18Res.data.schedules) {
+      const key = `${(item.subject_name || '').trim().toLowerCase()}|${(item.teacher_name || '').trim().toLowerCase()}|${(item.room_name || '').trim().toLowerCase()}|${item.block_type}`;
+      if (!seenSubjects.has(key)) {
+        seenSubjects.add(key);
+        uniqueSchedules.push(item);
+      }
+    }
+    assert(
+      uniqueSchedules.length === 1,
+      `SCHED-SYNC-12: Simulasi deduplikasi frontend web menghasilkan tepat 1 kartu jadwal blok unik (tidak ada duplikasi kartu), didapat ${uniqueSchedules.length}`
+    );
+
+    // 15E. Pengujian RBAC: Bendahara DITOLAK saat memanggil PUT /api/schedules/:id
+    const bendaharaPutRes = await bendaharaClient.request('PUT', `/api/schedules/${mondayId}`, {
+      body: { subject_name: 'Hacked by Bendahara' }
+    });
+    assert(
+      bendaharaPutRes.status === 403,
+      'SCHED-SYNC-13: Bendahara ditolak (403 Forbidden) saat mencoba mengedit jadwal via PUT'
+    );
+
+    // 15F. Pengujian Anti-IDOR: Mengedit jadwal kelas lain ditolak
+    const opusPutRes = await ketuaClient.request('PUT', `/api/schedules/${mondayId}?class_id=${CLASS_OPUS}`, {
+      body: { subject_name: 'Hacked IDOR' }
+    });
+    assert(
+      opusPutRes.status === 403,
+      'SCHED-SYNC-14: Ketua ditolak (403 Forbidden) saat mencoba memanipulasi jadwal kelas lain (Class Isolation)'
+    );
+  }
+
+  // =========================================================================
+  // SKENARIO 16: PENGUJIAN AKURASI TOGGLE MINGGU LIBUR KAS & SINKRONISASI KALKULASI
+  // =========================================================================
+  console.log('\n--- Skenario 16: Pengujian Akurasi Toggle Minggu Libur Kas & Sinkronisasi Kalkulasi ---');
+  {
+    // Pastikan bendahara login
+    const bendaharaMe = await bendaharaClient.request('GET', '/api/auth/me');
+    assert(bendaharaMe.status === 200, 'CASH-HOLIDAY-01: Bendahara aktif dan terautentikasi');
+
+    // 16A. Siapkan pengaturan kas standar: Tarif 5000, 4 minggu aktif
+    const initSettingsRes = await bendaharaClient.request('POST', '/api/cash/settings', {
+      body: { weekly_fee: 5000, active_weeks_count: 4 }
+    });
+    assert(initSettingsRes.status === 200, 'CASH-HOLIDAY-02: Setup pengaturan kas (Rp5.000 / 4 minggu)');
+
+    // 16B. Siapkan data pembayaran siswa uji:
+    // Siswa A: bayar minggu 1 & 2 (belum minggu 3 & 4) -> tunggakan awal 2 minggu (Rp10.000)
+    // Siswa B: bayar minggu 1, 2, & 4 (belum minggu 3) -> tunggakan awal 1 minggu (Rp5.000)
+    const stuListRes = await bendaharaClient.request('GET', '/api/students');
+    assert(stuListRes.status === 200 && stuListRes.data.students.length >= 2, 'CASH-HOLIDAY-03: Minimal 2 siswa tersedia');
+    const studentA = stuListRes.data.students[0];
+    const studentB = stuListRes.data.students[1];
+
+    await bendaharaClient.request('POST', '/api/cash/payments', {
+      body: {
+        payments: [
+          { student_id: studentA.id, week_number: 1, is_paid: 1 },
+          { student_id: studentA.id, week_number: 2, is_paid: 1 },
+          { student_id: studentA.id, week_number: 3, is_paid: 0 },
+          { student_id: studentA.id, week_number: 4, is_paid: 0 },
+          { student_id: studentB.id, week_number: 1, is_paid: 1 },
+          { student_id: studentB.id, week_number: 2, is_paid: 1 },
+          { student_id: studentB.id, week_number: 3, is_paid: 0 },
+          { student_id: studentB.id, week_number: 4, is_paid: 1 }
+        ]
+      }
+    });
+
+    // Cek rekap sebelum minggu 3 diliburkan
+    const recapBefore = await bendaharaClient.request('GET', '/api/cash/recap');
+    assert(recapBefore.status === 200, 'CASH-HOLIDAY-04: GET /api/cash/recap berhasil dimuat');
+    const stuABefore = recapBefore.data.students.find(s => s.student_id === studentA.id);
+    const stuBBefore = recapBefore.data.students.find(s => s.student_id === studentB.id);
+
+    assert(stuABefore.unpaid_weeks === 2 && stuABefore.arrears === 10000 && !stuABefore.is_lunas, 'CASH-HOLIDAY-05: Siswa A awal menunggak 2 minggu (Rp10.000)');
+    assert(stuBBefore.unpaid_weeks === 1 && stuBBefore.arrears === 5000 && !stuBBefore.is_lunas, 'CASH-HOLIDAY-06: Siswa B awal menunggak 1 minggu (Rp5.000)');
+
+    // 16C. Aksi Toggle: Bendahara meliburkan Minggu ke-3
+    const setHolRes = await bendaharaClient.request('POST', '/api/cash/holidays', {
+      body: { week_number: 3, is_holiday: true }
+    });
+    assert(setHolRes.status === 200, 'CASH-HOLIDAY-07: POST /api/cash/holidays berhasil menandai minggu 3 libur (200 OK)');
+    assert(Array.isArray(setHolRes.data?.holiday_weeks) && setHolRes.data.holiday_weeks.includes(3), 'CASH-HOLIDAY-08: Array holiday_weeks memuat minggu 3');
+
+    // 16D. Verifikasi Rekap setelah Minggu ke-3 Libur:
+    // Beban kewajiban kas berkurang dari 4 minggu ke 3 minggu aktif (minggu 1, 2, 4)
+    // Siswa A: bayar 2 minggu -> kini hanya kurang 1 minggu (Rp5.000)
+    // Siswa B: bayar 3 minggu (1, 2, 4) -> kini LUNAS (0 minggu, Rp0, ✅)
+    const recapAfterHol = await bendaharaClient.request('GET', '/api/cash/recap');
+    const stuAAfter = recapAfterHol.data.students.find(s => s.student_id === studentA.id);
+    const stuBAfter = recapAfterHol.data.students.find(s => s.student_id === studentB.id);
+
+    assert(stuAAfter.unpaid_weeks === 1, `CASH-HOLIDAY-09: Tunggakan Siswa A berkurang ke 1 minggu, didapat ${stuAAfter.unpaid_weeks}`);
+    assert(stuAAfter.arrears === 5000, `CASH-HOLIDAY-10: Nominal tunggakan Siswa A berkurang ke Rp5.000, didapat ${stuAAfter.arrears}`);
+    assert(stuBAfter.unpaid_weeks === 0, `CASH-HOLIDAY-11: Siswa B otomatis Lunas (0 minggu), didapat ${stuBAfter.unpaid_weeks}`);
+    assert(stuBAfter.arrears === 0 && stuBAfter.is_lunas === true, 'CASH-HOLIDAY-12: Siswa B terverifikasi LUNAS (arrears 0, is_lunas true)');
+    assert(stuBAfter.status_label === '✅', `CASH-HOLIDAY-13: Status label Siswa B menampilkan centang ✅, didapat ${stuBAfter.status_label}`);
+
+    // 16E. Verifikasi Sinkronisasi Dashboard Stats (/api/dashboard/stats)
+    const statsRes = await bendaharaClient.request('GET', '/api/dashboard/stats');
+    assert(statsRes.status === 200, 'CASH-HOLIDAY-14: GET /api/dashboard/stats 200 OK');
+    assert(statsRes.data?.cash_summary?.active_weeks_count === 3, `CASH-HOLIDAY-15: active_weeks_count di dashboard stats mengecualikan minggu libur (ekspektasi 3), didapat ${statsRes.data?.cash_summary?.active_weeks_count}`);
+
+    // 16F. Robust Boolean Parsing: Restore minggu libur menggunakan string "false"
+    const restoreStrRes = await bendaharaClient.request('POST', '/api/cash/holidays', {
+      body: { week_number: 3, is_holiday: 'false' }
+    });
+    assert(restoreStrRes.status === 200, 'CASH-HOLIDAY-16: POST /api/cash/holidays dengan is_holiday="false" berhasil');
+    assert(!restoreStrRes.data?.holiday_weeks?.includes(3), 'CASH-HOLIDAY-17: Minggu 3 berhasil dicabut dari holiday_weeks menggunakan string "false"');
+
+    // Cek rekap kembali normal setelah minggu libur dicabut
+    const recapRestored = await bendaharaClient.request('GET', '/api/cash/recap');
+    const stuARestored = recapRestored.data.students.find(s => s.student_id === studentA.id);
+    const stuBRestored = recapRestored.data.students.find(s => s.student_id === studentB.id);
+
+    assert(stuARestored.unpaid_weeks === 2 && stuARestored.arrears === 10000, 'CASH-HOLIDAY-18: Tunggakan Siswa A kembali ke Rp10.000 setelah libur dicabut');
+    assert(stuBRestored.unpaid_weeks === 1 && stuBRestored.arrears === 5000 && !stuBRestored.is_lunas, 'CASH-HOLIDAY-19: Siswa B kembali menunggak Rp5.000 setelah libur dicabut');
+
+    // 16G. Validasi Pencegahan Inflasi Minggu Masa Depan (Anti-Phantom-Arrears)
+    // Menandai minggu 8 sebagai libur masa depan tidak boleh memperluas active_weeks_count (harus tetap 4)
+    const futureHolRes = await bendaharaClient.request('POST', '/api/cash/holidays', {
+      body: { week_number: 8, is_holiday: true }
+    });
+    assert(futureHolRes.status === 200, 'CASH-HOLIDAY-24a: POST /api/cash/holidays untuk minggu masa depan (minggu 8) sukses 200 OK');
+    assert(futureHolRes.data?.active_weeks_count === 4, `CASH-HOLIDAY-24b: active_weeks_count tidak menggelembung ke 8 (tetap 4), didapat ${futureHolRes.data?.active_weeks_count}`);
+
+    // Verifikasi rekap kas tidak memunculkan tunggakan siluman untuk minggu 5, 6, 7
+    const recapAfterFutureHol = await bendaharaClient.request('GET', '/api/cash/recap');
+    const stuAFuture = recapAfterFutureHol.data.students.find(s => s.student_id === studentA.id);
+    assert(stuAFuture.unpaid_weeks === 2 && stuAFuture.arrears === 10000, `CASH-HOLIDAY-25: Siswa A tetap menunggak 2 minggu (Rp10.000), tanpa tagihan siluman minggu 5-7, didapat ${stuAFuture.arrears}`);
+
+    // Bersihkan kembali minggu 8
+    await bendaharaClient.request('POST', '/api/cash/holidays', {
+      body: { week_number: 8, is_holiday: false }
+    });
+
+    // 16H. Validasi UI Assets: app.js & styles.css memuat elemen toggle dan styling
+    const appJsContent = fs.readFileSync(path.join(projectRoot, 'web/public/app.js'), 'utf8');
+    assert(appJsContent.includes('btn-toggle-cash-holiday'), 'CASH-HOLIDAY-26a: app.js memuat #btn-toggle-cash-holiday desktop');
+    assert(appJsContent.includes('btn-toggle-cash-holiday-mobile'), 'CASH-HOLIDAY-26b: app.js memuat #btn-toggle-cash-holiday-mobile');
+    assert(appJsContent.includes('Set Libur') && appJsContent.includes('Set Aktif'), 'CASH-HOLIDAY-26c: app.js memiliki label aksi yang jelas: Set Libur & Set Aktif');
+    assert(appJsContent.includes('Libur') && appJsContent.includes('cashWeekOptionsList'), 'CASH-HOLIDAY-26d: app.js menyertakan status libur pada opsi pemilih minggu');
+
+    const stylesCssContent = fs.readFileSync(path.join(projectRoot, 'web/public/styles.css'), 'utf8');
+    assert(stylesCssContent.includes('.cash-week-btn.holiday'), 'CASH-HOLIDAY-27: styles.css memuat class styling .cash-week-btn.holiday');
+
+    // 16I. Pengujian Endpoint REST GET /api/cash/holidays & RBAC
+    const getHolidaysRes = await bendaharaClient.request('GET', '/api/cash/holidays');
+    assert(getHolidaysRes.status === 200 && Array.isArray(getHolidaysRes.data?.holiday_weeks), 'CASH-HOLIDAY-28: GET /api/cash/holidays mengembalikan 200 OK dan daftar array minggu libur');
+
+    const sekretarisHolRes = await sekretarisClient.request('GET', '/api/cash/holidays');
+    assert(sekretarisHolRes.status === 403, 'CASH-HOLIDAY-29: Sekretaris ditolak (403 Forbidden) saat mengakses GET /api/cash/holidays');
+
+    const ketuaHolRes = await ketuaClient.request('GET', '/api/cash/holidays');
+    assert(ketuaHolRes.status === 200, 'CASH-HOLIDAY-30: Ketua diizinkan membaca GET /api/cash/holidays (Read-Only)');
+
+    // 16J. Validasi CSS Media Query Anti-Duplikasi Tombol pada Tablet (768px-1023px)
+    assert(
+      stylesCssContent.includes('#btn-toggle-cash-holiday-mobile') && stylesCssContent.includes('.cash-holiday-mobile-group'),
+      'CASH-HOLIDAY-31: styles.css menyembunyikan #btn-toggle-cash-holiday-mobile dan .cash-holiday-mobile-group pada breakpoint >= 768px'
+    );
+    assert(
+      appJsContent.includes('cash-holiday-mobile-group') && appJsContent.includes('{ silent: true }'),
+      'CASH-HOLIDAY-32: app.js mengelompokkan kontrol mobile dan menerapkan silent reload tanpa flickering layout shift'
+    );
+
+    // 16K. Validasi Boundary & Edge Cases Endpoint POST /api/cash/holidays (Week 0, 53, NaN)
+    const invalidZeroRes = await bendaharaClient.request('POST', '/api/cash/holidays', {
+      body: { week_number: 0, is_holiday: true }
+    });
+    assert(invalidZeroRes.status === 400 && invalidZeroRes.data.ok === false, 'CASH-HOLIDAY-33a: POST /api/cash/holidays menolak nomor minggu 0 dengan HTTP 400');
+
+    const invalid53Res = await bendaharaClient.request('POST', '/api/cash/holidays', {
+      body: { week_number: 53, is_holiday: true }
+    });
+    assert(invalid53Res.status === 400 && invalid53Res.data.ok === false, 'CASH-HOLIDAY-33b: POST /api/cash/holidays menolak nomor minggu 53 dengan HTTP 400');
+
+    const invalidStrRes = await bendaharaClient.request('POST', '/api/cash/holidays', {
+      body: { week_number: 'bukan_angka', is_holiday: true }
+    });
+    assert(invalidStrRes.status === 400 && invalidStrRes.data.ok === false, 'CASH-HOLIDAY-33c: POST /api/cash/holidays menolak nomor minggu non-numerik dengan HTTP 400');
+
+    // 16L. Uji Ketahanan Schema Helper (setCashHolidayWeek & removeCashHolidayWeek) terhadap Anomali Input
+    let schemaCrashOccurred = false;
+    try {
+      setCashHolidayWeek(null, 1);
+      setCashHolidayWeek(CLASS_XI_RPL_C, null);
+      setCashHolidayWeek(CLASS_XI_RPL_C, 'invalid');
+      setCashHolidayWeek(CLASS_XI_RPL_C, 0);
+      setCashHolidayWeek(CLASS_XI_RPL_C, 53);
+      removeCashHolidayWeek(null, 1);
+      removeCashHolidayWeek(CLASS_XI_RPL_C, null);
+      removeCashHolidayWeek(CLASS_XI_RPL_C, 'invalid');
+      removeCashHolidayWeek(CLASS_XI_RPL_C, 0);
+      removeCashHolidayWeek(CLASS_XI_RPL_C, 53);
+      getCashHolidayWeeks(null);
+    } catch {
+      schemaCrashOccurred = true;
+    }
+    assert(!schemaCrashOccurred, 'CASH-HOLIDAY-34: Schema holiday functions tahan terhadap input null/NaN/out-of-bounds tanpa memicu exception unhandled');
+  }
+
+  // =========================================================================
+  // SKENARIO 17: PENGUJIAN CLIENT-SIDE DEMO SANDBOX & ISOLASI DATABASE
+  // =========================================================================
+  console.log('\n--- Skenario 17: Pengujian Client-Side Demo Sandbox & Isolasi Database ---');
+  {
+    // 17A. Verifikasi Ketersediaan & Validitas File Fisik
+    const sandboxPath = path.resolve(__dirname, '../public/demo-sandbox.js');
+    assert(fs.existsSync(sandboxPath), 'DEMO-01a: File web/public/demo-sandbox.js tersedia');
+    const sandboxCode = fs.readFileSync(sandboxPath, 'utf8');
+    assert(sandboxCode.includes('KastorDemoSandbox'), 'DEMO-01b: demo-sandbox.js mengekspor objek window.KastorDemoSandbox');
+    assert(sandboxCode.includes('XI Sains Digital (Demo)'), 'DEMO-01c: demo-sandbox.js memuat nama kelas dummy terisolasi');
+
+    // 17B. Verifikasi Integrasi di index.html & styles.css
+    const indexHtmlContent = fs.readFileSync(path.resolve(__dirname, '../public/index.html'), 'utf8');
+    assert(indexHtmlContent.includes('demo-sandbox.js'), 'DEMO-02: index.html memuat skrip demo-sandbox.js');
+
+    const stylesContent = fs.readFileSync(path.resolve(__dirname, '../public/styles.css'), 'utf8');
+    assert(stylesContent.includes('.demo-banner-container'), 'DEMO-03a: styles.css memuat styling banner demo');
+    assert(stylesContent.includes('.btn-outline-demo'), 'DEMO-03b: styles.css memuat styling tombol kontrol banner demo');
+
+    // 17C. Verifikasi Proteksi Akses Langsung (Direct Navigation Blocking) pada File .js & .css
+    const directJsRes = await fetch(`${baseUrl}/demo-sandbox.js`);
+    assert(directJsRes.status === 404, 'DEMO-04a: Akses langsung tanpa referer ke .js mengembalikan HTTP 404');
+
+    const addressBarJsRes = await fetch(`${baseUrl}/app.js`, {
+      headers: { 'Sec-Fetch-Dest': 'document', 'Sec-Fetch-Mode': 'navigate', 'Accept': 'text/html' }
+    });
+    assert(addressBarJsRes.status === 404, 'DEMO-04b: Akses address bar browser ke /app.js diblokir dengan HTTP 404');
+
+    const directCssRes = await fetch(`${baseUrl}/styles.css`);
+    assert(directCssRes.status === 404, 'DEMO-04c: Akses langsung tanpa referer ke .css mengembalikan HTTP 404');
+
+    const legitJsRes = await fetch(`${baseUrl}/demo-sandbox.js`, {
+      headers: { 'Sec-Fetch-Dest': 'script', 'Referer': `${baseUrl}/demo` }
+    });
+    assert(legitJsRes.status === 200, 'DEMO-04d: Pemuatan sah berkas script (<script>) mengembalikan HTTP 200');
+
+    const legitCssRes = await fetch(`${baseUrl}/styles.css`, {
+      headers: { 'Sec-Fetch-Dest': 'style', 'Referer': `${baseUrl}/demo` }
+    });
+    assert(legitCssRes.status === 200, 'DEMO-04e: Pemuatan sah stylesheet (<link>) mengembalikan HTTP 200');
+
+    // 17D. Verifikasi SPA Fallback untuk Rute /demo
+    const getDemoRes = await fetch(`${baseUrl}/demo`);
+    assert(getDemoRes.status === 200, 'DEMO-05a: Server menyajikan SPA index.html untuk rute /demo dengan HTTP 200');
+
+    // 17E. Verifikasi Logika Intercept & Balik dari 0 (Isolated LocalStorage Simulation)
+    const localStorageMock = (function () {
+      let store = {};
+      return {
+        getItem: (key) => store[key] || null,
+        setItem: (key, val) => { store[key] = String(val); },
+        removeItem: (key) => { delete store[key]; },
+        clear: () => { store = {}; }
+      };
+    })();
+
+    const mockWindow = {
+      location: { pathname: '/demo', search: '', origin: 'http://localhost:3001' },
+      fetch: async () => ({ ok: true, status: 200, json: async () => ({}) })
+    };
+    const mockDocument = {
+      getElementById: () => null,
+      querySelector: () => null,
+      addEventListener: () => {}
+    };
+
+    const runSandbox = new Function('window', 'document', 'localStorage', sandboxCode);
+    runSandbox(mockWindow, mockDocument, localStorageMock);
+
+    const Sandbox = mockWindow.KastorDemoSandbox;
+    assert(Sandbox && typeof Sandbox.activate === 'function', 'DEMO-06a: Sandbox API terinisialisasi sempurna');
+
+    Sandbox.activate();
+    assert(Sandbox.isActive() === true, 'DEMO-06b: Mode demo aktif saat mengakses rute /demo');
+
+    // Intercept GET /api/auth/me
+    const meRes = await mockWindow.fetch('/api/auth/me');
+    const meData = await meRes.json();
+    assert(meData.ok === true && meData.user.role === 'DEVELOPER', 'DEMO-06c: /api/auth/me mengembalikan role DEVELOPER untuk sesi demo');
+
+    // Tambah Siswa Simulasi
+    const addRes = await mockWindow.fetch('/api/students', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Siswa Uji Sandbox', phone_number: '081299991234', gender: 'L' })
+    });
+    const addData = await addRes.json();
+    assert(addData.ok === true && addData.student.name === 'Siswa Uji Sandbox', 'DEMO-06d: Tambah siswa di sandbox berhasil');
+
+    // Verifikasi data SQLite server TETAP BERSIH tanpa penambahan siswa fiktif
+    const dbCheck = db.prepare('SELECT COUNT(*) as count FROM students WHERE name = ?').get('Siswa Uji Sandbox');
+    assert(Number(dbCheck?.count || 0) === 0, 'DEMO-06e: Database SQLite server 100% aman dan tidak tersentuh oleh mutasi sandbox');
+
+    // Reset Sandbox ("Balik dari 0")
+    Sandbox.resetStore();
+    const storeAfterReset = Sandbox.getStore();
+    assert(storeAfterReset.students.some(s => s.name === 'Siswa Uji Sandbox') === false, 'DEMO-06f: Reset store ("Balik dari 0") membersihkan data mutasi temporer');
+    assert(storeAfterReset.students.length === 10, 'DEMO-06g: Reset store mengembalikan jumlah siswa ke nilai default awal (10 siswa)');
+
+    // Keluar Sesi Demo
+    Sandbox.exit();
+    assert(localStorageMock.getItem('kastor_demo_active') === null, 'DEMO-06h: Keluar sesi demo menghapus state aktif dari browser');
   }
 
 } finally {

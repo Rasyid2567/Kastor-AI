@@ -1,11 +1,14 @@
-import { initDatabase, db } from '../../database/schema.js';
+import { initDatabase, db, resolveClassGroupId, getLinkedGroups, isGroupDisabled, setGroupDisabled, setGroupEnabled, getCashHolidayWeeks, setCashHolidayWeek, removeCashHolidayWeek } from '../../database/schema.js';
 import { seedDefaultClass } from '../../database/seed.js';
 import { calculateWeekNumber, getScheduleToday, getScheduleTomorrow, getScheduleByDay, getScheduleFull, getScheduleNow } from '../modules/schedule.js';
-import { getTreasurerRole, setWeeklyFee, parseChecklistText, getCashRecap } from '../modules/cash.js';
-import { getActiveAssignments, getAllAssignments, getAssignmentDetail, addAssignment, completeAssignment, deleteAssignment } from '../modules/assignments.js';
-import { calculateMath } from '../modules/media.js';
+import { getTreasurerRole, setWeeklyFee, parseChecklistText, getCashRecap, getStudentCashBill } from '../modules/cash.js';
+import { getActiveAssignments, getAllAssignments, getAssignmentDetail, addAssignment, completeAssignment, deleteAssignment, isDeveloper } from '../modules/assignments.js';
+import { calculateMath, convertToSticker, generateStickerMeme } from '../modules/media.js';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { isWhatsAppAdmin, setOrganizationPosition } from '../modules/admin.js';
-import { resolveClassGroupId, getLinkedGroups } from '../../database/schema.js';
 import {
   linkGroupToClass,
   unlinkGroup,
@@ -21,7 +24,20 @@ import {
   updateFinancialTransaction,
   deleteFinancialTransaction
 } from '../modules/finance.js';
-import { getHelpMenu } from '../router.js';
+import { runDownloaderTests } from './downloader-test.js';
+import { getHelpMenu, routeMessage } from '../router.js';
+import {
+  formatLimitDuration,
+  isAuthorizedLimitUser,
+  getBotLimitConfig,
+  updateBotLimitConfig,
+  checkUserCooldown,
+  recordUserCooldown,
+  clearUserCooldown,
+  resetAllUserCooldowns,
+  handleLimitCommand
+} from '../modules/secret.js';
+import assert from 'node:assert';
 
 console.log('🧪 Memulai Pengujian Fungsional Bot Kelas...\n');
 
@@ -53,6 +69,44 @@ if (cashRecap.includes('Naswa: ✅') && cashRecap.includes('Nikita: Rp10.000') &
 } else {
   console.error('❌ [FAILED] Format /kas tidak mematuhi PRD!');
 }
+
+// 3b. Test Minggu Libur Kas
+console.log('--- TEST 2b: Minggu Libur Kas (Holiday Weeks) ---');
+setCashHolidayWeek(testGroupId, 3, 'Bendahara Test');
+const holidays = getCashHolidayWeeks(testGroupId);
+if (!holidays.includes(3)) {
+  throw new Error('setCashHolidayWeek gagal menyimpan minggu libur!');
+}
+console.log('[PASS] setCashHolidayWeek berhasil menyimpan minggu 3');
+
+// Periksa bahwa getCashRecap otomatis mengecualikan minggu libur
+const recapAfterHoliday = getCashRecap(testGroupId);
+if (recapAfterHoliday.includes('Nikita: Rp5.000')) {
+  console.log('[PASS] getCashRecap otomatis mengecualikan minggu libur (tunggakan Nikita berkurang dari Rp10.000 ke Rp5.000)');
+} else {
+  throw new Error(`Nikita harusnya menunggak Rp5.000 setelah minggu 3 diliburkan! Output:\n${recapAfterHoliday}`);
+}
+
+// Cek tagihan pribadi (/kas) juga berkurang tanpa membocorkan teks libur
+const billNikita = getStudentCashBill(testGroupId, null, 'Nikita');
+if (billNikita.includes('Kurang : 1 minggu') && billNikita.includes('Tagihan: Rp5.000') && !billNikita.includes('Libur')) {
+  console.log('[PASS] getStudentCashBill bersih tanpa teks keterangan libur dan nominal berkurang akurat');
+} else {
+  throw new Error(`Format getStudentCashBill salah! Output:\n${billNikita}`);
+}
+
+// Kembalikan minggu 3 menjadi masuk (removeCashHolidayWeek)
+removeCashHolidayWeek(testGroupId, 3);
+const holidaysAfterRemove = getCashHolidayWeeks(testGroupId);
+if (holidaysAfterRemove.includes(3)) {
+  throw new Error('removeCashHolidayWeek gagal menghapus minggu libur!');
+}
+console.log('[PASS] removeCashHolidayWeek berhasil mengaktifkan kembali minggu 3 (masuk)');
+const recapAfterRemove = getCashRecap(testGroupId);
+if (!recapAfterRemove.includes('Nikita: Rp10.000')) {
+  throw new Error('Tunggakan Nikita harus kembali ke Rp10.000 setelah minggu libur dihapus!');
+}
+console.log('[PASS] getCashRecap kembali normal setelah minggu libur dicabut');
 
 // 4. Test PM Bendahara: Update via Ceklis Teks
 console.log('\n--- TEST 3: PM Bendahara (Teks Ceklis) ---');
@@ -94,6 +148,18 @@ if (!menu.includes('/rvo')) {
   throw new Error('❌ [FAILED] /rvo bocor di /menu!');
 }
 
+if (!menu.includes('/off') && !menu.includes('/on')) {
+  console.log('✅ [VERIFIED] /off dan /on TERSEMBUNYI dan TIDAK TERCANTUM di /menu!');
+} else {
+  throw new Error('❌ [FAILED] /off atau /on bocor di /menu!');
+}
+
+if (!menu.includes('/limit')) {
+  console.log('✅ [VERIFIED] /limit TERSEMBUNYI dan TIDAK TERCANTUM di /menu!');
+} else {
+  throw new Error('❌ [FAILED] /limit bocor di /menu!');
+}
+
 if (menu.includes('/tugas') && !menu.includes('• `/pr`') && !menu.includes('• `/pr all`')) {
   console.log('✅ [VERIFIED] /tugas AKTIF di /menu dan /pr telah dinonaktifkan sepenuhnya!');
 } else {
@@ -104,6 +170,12 @@ if (menu.includes('/smeme [atas] | [bawah]') && menu.includes('/struktur set [ja
   console.log('✅ [VERIFIED] Seluruh perintah multi-argumen di /menu konsisten menggunakan pemisah pipa (|)!');
 } else {
   throw new Error('❌ [FAILED] Format pipa (|) pada /menu belum konsisten!');
+}
+
+if (menu.includes('/tt') && menu.includes('/yt') && menu.includes('/ig') && menu.includes('/fb')) {
+  console.log('✅ [VERIFIED] Perintah downloader /tt, /yt, /ig, /fb terdaftar di /menu!');
+} else {
+  throw new Error('❌ [FAILED] /menu belum mencantumkan /tt, /yt, /ig, /fb!');
 }
 
 // 8. Test Otorisasi Admin Grup WhatsApp (isWhatsAppAdmin)
@@ -381,6 +453,409 @@ console.log(`[PASS] /smeme atas | bawah -> top: "${sC.topText}", bottom: "${sC.b
 if (sC.topText !== 'atas' || sC.bottomText !== 'bawah') {
   throw new Error('Skenario /smeme atas | bawah harus mengisi kedua teks!');
 }
+
+// 11. Test Modul Downloader (/tt, /yt, /ig, /fb)
+runDownloaderTests();
+
+// 12. Test Modul Toggle Bot Per-Grup (/off & /on)
+console.log('\n--- TEST 12: Modul Toggle Bot Per-Grup (/off & /on) ---');
+const testOffGroup = '120363000000000099@g.us';
+const devPhone = '628999888777';
+const devJid = `${devPhone}@s.whatsapp.net`;
+const nonDevJid = '628111222333@s.whatsapp.net';
+
+// Pastikan grup bersih
+setGroupEnabled(testOffGroup);
+if (isGroupDisabled(testOffGroup)) {
+  throw new Error('isGroupDisabled harus false sebelum dimatikan!');
+}
+console.log('[PASS] State awal grup: aktif (isGroupDisabled = false)');
+
+// Set disabled
+setGroupDisabled(testOffGroup, devJid);
+if (!isGroupDisabled(testOffGroup)) {
+  throw new Error('setGroupDisabled gagal menonaktifkan grup!');
+}
+console.log('[PASS] setGroupDisabled berhasil menyimpan ke database (isGroupDisabled = true)');
+
+// Set disabled lagi (uji ON CONFLICT / upsert)
+setGroupDisabled(testOffGroup, '628000000000@s.whatsapp.net');
+if (!isGroupDisabled(testOffGroup)) {
+  throw new Error('Upsert setGroupDisabled gagal!');
+}
+console.log('[PASS] Upsert setGroupDisabled berhasil');
+
+// Set enabled
+setGroupEnabled(testOffGroup);
+if (isGroupDisabled(testOffGroup)) {
+  throw new Error('setGroupEnabled gagal mengaktifkan grup kembali!');
+}
+console.log('[PASS] setGroupEnabled berhasil menghapus status nonaktif (isGroupDisabled = false)');
+
+// Uji otorisasi isDeveloper
+const isDevTrue = isDeveloper(devJid, devPhone);
+const isDevFalse = isDeveloper(nonDevJid, devPhone);
+console.log(`[PASS] isDeveloper valid: ${isDevTrue}, invalid: ${!isDevFalse}`);
+if (!isDevTrue || isDevFalse) {
+  throw new Error('Pemeriksaan isDeveloper tidak sesuai ekspektasi!');
+}
+
+// Simulasi alur router (routeMessage)
+const origDevEnv = process.env.DEVELOPER_NUMBER;
+process.env.DEVELOPER_NUMBER = devPhone;
+
+try {
+  let sentMessages = [];
+  const mockSock = {
+    sendMessage: async (jid, content, options) => {
+      sentMessages.push({ jid, content, options });
+      return { key: { id: 'test_msg_id' } };
+    }
+  };
+
+  // Helper untuk buat fake msg
+  const createMockMsg = (sender, text) => ({
+    key: { remoteJid: testOffGroup, participant: sender, fromMe: false },
+    message: { conversation: text },
+    messageTimestamp: Math.floor(Date.now() / 1000)
+  });
+
+  // Skenario 1: Non-dev kirim /off saat bot aktif -> SENYAP TOTAL (tanpa teks maupun reaksi)
+  sentMessages = [];
+  await routeMessage(mockSock, createMockMsg(nonDevJid, '/off'));
+  if (sentMessages.length > 0) {
+    throw new Error('Non-developer /off harus senyap total!');
+  }
+  console.log('[PASS] Skenario 1: Non-developer mencoba /off -> senyap total (diabaikan)');
+
+  // Skenario 2: Developer kirim /off saat bot aktif -> grup nonaktif + HANYA REAKSI ⛔ (tanpa pesan teks)
+  sentMessages = [];
+  const offMsg = createMockMsg(devJid, '/off');
+  await routeMessage(mockSock, offMsg);
+  if (!isGroupDisabled(testOffGroup)) {
+    throw new Error('Developer /off harus menonaktifkan grup!');
+  }
+  const reactOff = sentMessages.find(m => m.content?.react?.text === '⛔');
+  const hasTextOutputOff = sentMessages.some(m => m.content?.text);
+  if (!reactOff || hasTextOutputOff) {
+    throw new Error('Developer /off harus mengirim reaksi ⛔ dan TIDAK BOLEH mengirim pesan teks!');
+  }
+  console.log('[PASS] Skenario 2: Developer mengirim /off -> reaksi ⛔ dikirim & tanpa pesan teks');
+
+  // Skenario 3: Pesan biasa / command lain saat bot nonaktif -> SENYAP TOTAL (tidak ada balasan)
+  sentMessages = [];
+  await routeMessage(mockSock, createMockMsg(devJid, '/menu'));
+  await routeMessage(mockSock, createMockMsg(nonDevJid, 'Halo bot apa kabar'));
+  await routeMessage(mockSock, createMockMsg(nonDevJid, '/jadwal'));
+  if (sentMessages.length > 0) {
+    throw new Error('Bot harus senyap total saat grup dinonaktifkan!');
+  }
+  console.log('[PASS] Skenario 3: Seluruh pesan / perintah biasa diabaikan saat grup nonaktif');
+
+  // Skenario 4: Non-dev kirim /on saat bot nonaktif -> SENYAP TOTAL (tidak ada respon)
+  sentMessages = [];
+  await routeMessage(mockSock, createMockMsg(nonDevJid, '/on'));
+  if (sentMessages.length > 0 || !isGroupDisabled(testOffGroup)) {
+    throw new Error('Non-dev tidak boleh membangunkan bot saat grup nonaktif!');
+  }
+  console.log('[PASS] Skenario 4: Non-developer mencoba /on saat bot nonaktif -> tetap senyap');
+
+  // Skenario 5: Developer kirim /on saat bot nonaktif -> bot aktif kembali + HANYA REAKSI ✅ (tanpa pesan teks)
+  sentMessages = [];
+  const onMsg = createMockMsg(devJid, '/on');
+  await routeMessage(mockSock, onMsg);
+  if (isGroupDisabled(testOffGroup)) {
+    throw new Error('Developer /on harus mengaktifkan kembali grup!');
+  }
+  const reactOn = sentMessages.find(m => m.content?.react?.text === '✅');
+  const hasTextOutputOn = sentMessages.some(m => m.content?.text);
+  if (!reactOn || hasTextOutputOn) {
+    throw new Error('Developer /on harus mengirim reaksi ✅ dan TIDAK BOLEH mengirim pesan teks!');
+  }
+  console.log('[PASS] Skenario 5: Developer mengirim /on saat nonaktif -> reaksi ✅ dikirim & tanpa pesan teks');
+
+  // Skenario 6: Developer kirim /on lagi saat sudah aktif -> reaksi ✅ (tanpa pesan teks)
+  sentMessages = [];
+  await routeMessage(mockSock, createMockMsg(devJid, '/on'));
+  const reactAlreadyOn = sentMessages.find(m => m.content?.react?.text === '✅');
+  const hasTextOutputAlreadyOn = sentMessages.some(m => m.content?.text);
+  if (!reactAlreadyOn || hasTextOutputAlreadyOn) {
+    throw new Error('Developer /on saat sudah aktif harus memberi reaksi ✅ dan TIDAK BOLEH mengirim pesan teks!');
+  }
+  console.log('[PASS] Skenario 6: Developer mengirim /on saat sudah aktif -> reaksi ✅ dikonfirmasi');
+} finally {
+  process.env.DEVELOPER_NUMBER = origDevEnv;
+  setGroupEnabled(testOffGroup);
+}
+
+// 14. Test Command Rahasia /limit & Rate Limiting
+console.log('\n--- TEST 13: Command Rahasia /limit & Rate Limiting ---');
+
+// 1. Formatter tests (0 -> "0d", 45 -> "45d", 60 -> "1m", 90 -> "1m 30d", 120 -> "2m")
+assert.strictEqual(formatLimitDuration(0), '0d');
+assert.strictEqual(formatLimitDuration(45), '45d');
+assert.strictEqual(formatLimitDuration(60), '1m');
+assert.strictEqual(formatLimitDuration(90), '1m 30d');
+assert.strictEqual(formatLimitDuration(120), '2m');
+assert.strictEqual(formatLimitDuration(150), '2m 30d');
+assert.strictEqual(formatLimitDuration(-10), '0d');
+console.log('[PASS] formatLimitDuration validasi 0s, 45s, 60s, 90s, 120s lulus');
+
+// 2. Authorization check tests (Developer, class_roles, web_users, non-authorized)
+const limitDevPhone = '628999111222';
+const limitDevJid = `${limitDevPhone}@s.whatsapp.net`;
+const limitNonDevJid = '628999333444@s.whatsapp.net';
+
+assert.strictEqual(isAuthorizedLimitUser(limitDevJid, null, limitDevPhone), true);
+assert.strictEqual(isAuthorizedLimitUser(limitNonDevJid, null, limitDevPhone), false);
+
+// Test class_roles authorization
+const limitKetuaPhone = '628777777777';
+const limitKetuaJid = `${limitKetuaPhone}@s.whatsapp.net`;
+db.prepare(`
+  INSERT OR REPLACE INTO class_roles (group_id, phone_number, role)
+  VALUES (?, ?, 'KETUA')
+`).run(testGroupId, limitKetuaJid);
+assert.strictEqual(isAuthorizedLimitUser(limitKetuaJid, testGroupId, limitDevPhone), true);
+db.prepare('DELETE FROM class_roles WHERE group_id = ? AND phone_number = ?').run(testGroupId, limitKetuaJid);
+
+// Test web_users authorization
+const limitWebPhone = '62888888888';
+db.prepare(`
+  INSERT OR REPLACE INTO web_users (phone_number, password_hash, role)
+  VALUES (?, 'fakehash', 'SEKRETARIS')
+`).run(limitWebPhone);
+assert.strictEqual(isAuthorizedLimitUser(`${limitWebPhone}@s.whatsapp.net`, null, limitDevPhone), true);
+db.prepare('DELETE FROM web_users WHERE phone_number = ?').run(limitWebPhone);
+console.log('[PASS] isAuthorizedLimitUser valid: developer, class_roles, dan web_users diizinkan, pihak luar ditolak');
+
+// 3. Persistent config update & retrieval
+updateBotLimitConfig('ai', { window_seconds: 90, enabled: true });
+let limitCfg = getBotLimitConfig();
+assert.strictEqual(limitCfg.ai.window_seconds, 90);
+assert.strictEqual(limitCfg.ai.enabled, true);
+
+updateBotLimitConfig('tt', { window_seconds: 45, enabled: true });
+limitCfg = getBotLimitConfig();
+assert.strictEqual(limitCfg.tt.window_seconds, 45);
+assert.strictEqual(limitCfg.tt.enabled, true);
+
+updateBotLimitConfig('sticker', { window_seconds: 120, enabled: true });
+limitCfg = getBotLimitConfig();
+assert.strictEqual(limitCfg.sticker.window_seconds, 120);
+assert.strictEqual(limitCfg.sticker.enabled, true);
+
+// Setting window_seconds to 0 automatically disables the limit
+updateBotLimitConfig('ai', { window_seconds: 0 });
+limitCfg = getBotLimitConfig();
+assert.strictEqual(limitCfg.ai.enabled, false);
+assert.strictEqual(limitCfg.ai.window_seconds, 0);
+
+// Restore default limits for ai and tt
+updateBotLimitConfig('ai', { window_seconds: 30, enabled: true });
+updateBotLimitConfig('tt', { window_seconds: 60, enabled: true });
+console.log('[PASS] updateBotLimitConfig persisten tersimpan di bot_settings');
+
+// 4. Per-user cooldown check & reset
+resetAllUserCooldowns();
+assert.strictEqual(checkUserCooldown('ai', 'user_limit_123').allowed, true);
+recordUserCooldown('ai', 'user_limit_123');
+const cdCheck = checkUserCooldown('ai', 'user_limit_123');
+assert.strictEqual(cdCheck.allowed, false);
+assert.strictEqual(cdCheck.formatted_remaining, '30d');
+
+clearUserCooldown('ai', 'user_limit_123');
+assert.strictEqual(checkUserCooldown('ai', 'user_limit_123').allowed, true);
+
+recordUserCooldown('tt', 'user_limit_456');
+assert.strictEqual(checkUserCooldown('tt', 'user_limit_456').allowed, false);
+resetAllUserCooldowns('tt');
+assert.strictEqual(checkUserCooldown('tt', 'user_limit_456').allowed, true);
+console.log('[PASS] checkUserCooldown, recordUserCooldown, clearUserCooldown, dan resetAllUserCooldowns lulus');
+
+// 5. handleLimitCommand execution via mock socket
+let limitSent = [];
+const mockLimitSock = {
+  sendMessage: async (jid, content, opts) => {
+    limitSent.push({ jid, content, opts });
+    return { key: { id: 'MOCK_LIMIT_' + Date.now() } };
+  }
+};
+const mockLimitMsg = { key: { id: 'LIMIT_KEY', remoteJid: testGroupId } };
+
+// 5a. Regular user can view status (clean without footer guide), but setting limits is rejected
+limitSent = [];
+await handleLimitCommand(mockLimitSock, mockLimitMsg, testGroupId, limitNonDevJid, 'status', limitDevPhone);
+assert.strictEqual(limitSent.length, 1);
+assert.match(limitSent[0].content.text, /INFORMASI RATE LIMIT BOT/i);
+assert.doesNotMatch(limitSent[0].content.text, /Panduan Pengaturan/i);
+assert.doesNotMatch(limitSent[0].content.text, /Ubah batas/i);
+
+// Also test regular user calling /limit without args (defaults to status)
+limitSent = [];
+await handleLimitCommand(mockLimitSock, mockLimitMsg, testGroupId, limitNonDevJid, '', limitDevPhone);
+assert.strictEqual(limitSent.length, 1);
+assert.match(limitSent[0].content.text, /INFORMASI RATE LIMIT BOT/i);
+assert.doesNotMatch(limitSent[0].content.text, /Panduan Pengaturan/i);
+assert.doesNotMatch(limitSent[0].content.text, /Ubah batas/i);
+
+// Setting limits by regular user is rejected strictly
+limitSent = [];
+await handleLimitCommand(mockLimitSock, mockLimitMsg, testGroupId, limitNonDevJid, 'ai 90', limitDevPhone);
+assert.strictEqual(limitSent.length, 1);
+assert.match(limitSent[0].content.text, /Akses ditolak: Hanya Developer yang berhak mengatur batas limit/);
+
+// 5b. Authorized caller requesting status
+limitSent = [];
+await handleLimitCommand(mockLimitSock, mockLimitMsg, testGroupId, limitDevJid, 'status', limitDevPhone);
+assert.strictEqual(limitSent.length, 1);
+assert.match(limitSent[0].content.text, /INFORMASI RATE LIMIT BOT/);
+assert.match(limitSent[0].content.text, /Stiker/);
+assert.match(limitSent[0].content.text, /AI Assistant/);
+assert.match(limitSent[0].content.text, /Downloader/);
+
+// 5c. Authorized caller setting limit with seconds
+limitSent = [];
+await handleLimitCommand(mockLimitSock, mockLimitMsg, testGroupId, limitDevJid, 'ai 90', limitDevPhone);
+assert.strictEqual(limitSent.length, 1);
+assert.match(limitSent[0].content.text, /1m 30d/);
+assert.strictEqual(getBotLimitConfig().ai.window_seconds, 90);
+
+// 5d. Authorized caller turning limit off
+limitSent = [];
+await handleLimitCommand(mockLimitSock, mockLimitMsg, testGroupId, limitDevJid, 'ai off', limitDevPhone);
+assert.strictEqual(limitSent.length, 1);
+assert.match(limitSent[0].content.text, /dinonaktifkan/i);
+assert.strictEqual(getBotLimitConfig().ai.enabled, false);
+
+// 5e. Authorized caller turning limit on
+limitSent = [];
+await handleLimitCommand(mockLimitSock, mockLimitMsg, testGroupId, limitDevJid, 'ai on', limitDevPhone);
+assert.strictEqual(limitSent.length, 1);
+assert.match(limitSent[0].content.text, /diaktifkan/i);
+assert.strictEqual(getBotLimitConfig().ai.enabled, true);
+
+// 5e-2. Authorized caller using /limit all [detik] and /limit * [detik]
+limitSent = [];
+await handleLimitCommand(mockLimitSock, mockLimitMsg, testGroupId, limitDevJid, 'all 75', limitDevPhone);
+assert.strictEqual(limitSent.length, 1);
+assert.match(limitSent[0].content.text, /Seluruh fitur/i);
+assert.match(limitSent[0].content.text, /1m 15d/);
+assert.strictEqual(getBotLimitConfig().sticker.window_seconds, 75);
+assert.strictEqual(getBotLimitConfig().ai.window_seconds, 75);
+assert.strictEqual(getBotLimitConfig().tt.window_seconds, 75);
+
+limitSent = [];
+await handleLimitCommand(mockLimitSock, mockLimitMsg, testGroupId, limitDevJid, '* off', limitDevPhone);
+assert.strictEqual(limitSent.length, 1);
+assert.match(limitSent[0].content.text, /dinonaktifkan/i);
+assert.strictEqual(getBotLimitConfig().sticker.enabled, false);
+assert.strictEqual(getBotLimitConfig().ai.enabled, false);
+assert.strictEqual(getBotLimitConfig().tt.enabled, false);
+
+limitSent = [];
+await handleLimitCommand(mockLimitSock, mockLimitMsg, testGroupId, limitDevJid, 'all on', limitDevPhone);
+assert.strictEqual(limitSent.length, 1);
+assert.match(limitSent[0].content.text, /diaktifkan/i);
+assert.strictEqual(getBotLimitConfig().sticker.enabled, true);
+assert.strictEqual(getBotLimitConfig().ai.enabled, true);
+assert.strictEqual(getBotLimitConfig().tt.enabled, true);
+
+// 5f. Router dispatch for /limit
+limitSent = [];
+const mockRouterSock = {
+  sendMessage: async (jid, content, opts) => {
+    limitSent.push({ jid, content, opts });
+    return { key: { id: 'MOCK_R_' + Date.now() } };
+  },
+  sendPresenceUpdate: async () => {}
+};
+const routeMsg = {
+  key: { remoteJid: testGroupId, participant: limitDevJid, fromMe: false, id: 'RT_LIMIT_1' },
+  message: { conversation: '/limit status' },
+  messageTimestamp: Math.floor(Date.now() / 1000)
+};
+const origDevLimit = process.env.DEVELOPER_NUMBER;
+process.env.DEVELOPER_NUMBER = limitDevPhone;
+try {
+  await routeMessage(mockRouterSock, routeMsg);
+  assert.strictEqual(limitSent.length, 1);
+  assert.match(limitSent[0].content.text, /INFORMASI RATE LIMIT BOT/);
+} finally {
+  process.env.DEVELOPER_NUMBER = origDevLimit;
+}
+
+// Reset limit AI back to standard 30s
+updateBotLimitConfig('ai', { window_seconds: 30, enabled: true });
+console.log('[PASS] handleLimitCommand dan router dispatch /limit terverifikasi');
+
+// --- TEST 14: Pembuatan Stiker Aspek Rasio Alami (Horizontal & Vertikal Bebas 1:1) & Resolusi Rendah ---
+console.log('\n--- TEST 14: Pembuatan Stiker Rasio Alami & Resolusi Rendah ---');
+// 14a. Foto landscape 16:9 (640x360) tetap memanjang horizontal (512x288, tidak dipaksa 1:1 kotak)
+const tmpTestJpg = path.join(os.tmpdir(), `test_14_169_${Date.now()}.jpg`);
+spawnSync('ffmpeg', ['-y', '-f', 'lavfi', '-i', 'color=c=green:s=640x360:d=1', '-vframes', '1', tmpTestJpg]);
+const buf169 = fs.readFileSync(tmpTestJpg);
+fs.unlinkSync(tmpTestJpg);
+
+const sticker169 = await convertToSticker(buf169, false);
+assert(Buffer.isBuffer(sticker169) && sticker169.length > 0, 'Output stiker 16:9 harus berupa buffer valid');
+
+const tmpProbeWebp = path.join(os.tmpdir(), `test_probe_14_${Date.now()}.webp`);
+fs.writeFileSync(tmpProbeWebp, sticker169);
+let probe = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', tmpProbeWebp]);
+let [w169, h169] = probe.stdout.toString().trim().split(',');
+fs.unlinkSync(tmpProbeWebp);
+
+assert.strictEqual(w169, '512');
+assert.strictEqual(h169, '288');
+console.log('[PASS] Foto landscape 16:9 tetap horizontal alami (512x288, tanpa dipaksa kotak 1:1)');
+
+// 14b. Foto portrait 9:16 (360x640) tetap vertikal tinggi alami (288x512)
+const tmpPortJpg = path.join(os.tmpdir(), `test_14_port_${Date.now()}.jpg`);
+spawnSync('ffmpeg', ['-y', '-f', 'lavfi', '-i', 'color=c=blue:s=360x640:d=1', '-vframes', '1', tmpPortJpg]);
+const bufPort = fs.readFileSync(tmpPortJpg);
+fs.unlinkSync(tmpPortJpg);
+
+const stickerPort = await convertToSticker(bufPort, false);
+fs.writeFileSync(tmpProbeWebp, stickerPort);
+probe = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', tmpProbeWebp]);
+let [wPort, hPort] = probe.stdout.toString().trim().split(',');
+fs.unlinkSync(tmpProbeWebp);
+
+assert.strictEqual(wPort, '288');
+assert.strictEqual(hPort, '512');
+console.log('[PASS] Foto portrait 9:16 tetap vertikal tinggi alami (288x512, tanpa dipaksa kotak 1:1)');
+
+// 14c. Foto resolusi sangat kecil (60x60) berhasil di-scale up ke kanvas 512x512
+const tmpTinyJpg = path.join(os.tmpdir(), `test_14_tiny_${Date.now()}.jpg`);
+spawnSync('ffmpeg', ['-y', '-f', 'lavfi', '-i', 'color=c=yellow:s=60x60:d=1', '-vframes', '1', tmpTinyJpg]);
+const bufTiny = fs.readFileSync(tmpTinyJpg);
+fs.unlinkSync(tmpTinyJpg);
+
+const stickerTiny = await convertToSticker(bufTiny, false);
+assert(Buffer.isBuffer(stickerTiny) && stickerTiny.length > 0, 'Output stiker resolusi kecil harus berupa buffer valid');
+
+fs.writeFileSync(tmpProbeWebp, stickerTiny);
+probe = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', tmpProbeWebp]);
+let [tw, th] = probe.stdout.toString().trim().split(',');
+fs.unlinkSync(tmpProbeWebp);
+
+assert.strictEqual(tw, '512');
+assert.strictEqual(th, '512');
+console.log('[PASS] Foto resolusi kecil (60x60) berhasil di-scale up ke 512x512 dengan lanczos + unsharp');
+
+// 14d. Meme stiker dengan gambar landscape juga mempertahankan bentuk horizontal
+const memeBuf = await generateStickerMeme(buf169, 'TEST MEME ATAS', 'TEST MEME BAWAH');
+assert(Buffer.isBuffer(memeBuf) && memeBuf.length > 0, 'Output meme stiker harus valid');
+
+fs.writeFileSync(tmpProbeWebp, memeBuf);
+probe = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', tmpProbeWebp]);
+let [mw, mh] = probe.stdout.toString().trim().split(',');
+fs.unlinkSync(tmpProbeWebp);
+
+assert.strictEqual(mw, '512');
+assert.strictEqual(mh, '288');
+console.log('[PASS] Meme stiker foto 16:9 berhasil dirender tetap horizontal (512x288)');
 
 // Bersihkan data uji coba agar tidak mencemari database produksi
 db.prepare('DELETE FROM organization_structures WHERE group_id = ?').run(testGroupId);

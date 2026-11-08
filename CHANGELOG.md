@@ -1,6 +1,6 @@
 # Changelog
 
-Semua perubahan penting pada proyek **Kastor AI (ARAS)** didokumentasikan di berkas ini.
+Semua perubahan penting pada proyek **Kastor AI** didokumentasikan di berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/)
 dan proyek ini mematuhi prinsip [Semantic Versioning](https://semver.org/spec/v2.0.0.html).

@@ -51,7 +51,7 @@ export async function startWhatsAppSocket() {
       }
     } else if (connection === 'open') {
       console.log('\n============================================================');
-      console.log('✅ BOT WHATSAPP KELAS (ARAS 1.0) BERHASIL TERHUBUNG & AKTIF!');
+      console.log('✅ BOT WHATSAPP KELAS (Kastor AI) BERHASIL TERHUBUNG & AKTIF!');
       console.log(`🤖 ID Bot: ${sock.user?.id}`);
       console.log('============================================================\n');
 

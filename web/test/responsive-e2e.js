@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * KASTOR AI / ARAS 1.0 — RESPONSIVE MOBILE-FIRST E2E AUTOMATED TEST SUITE
+ * KASTOR AI — RESPONSIVE MOBILE-FIRST E2E AUTOMATED TEST SUITE
  * ============================================================================
  *
  * Comprehensive end-to-end and responsive design validation suite verifying:
@@ -16,7 +16,7 @@
  *   node web/test/responsive-e2e.js --tier 2
  *
  * Zero external dependencies — pure Node.js / Bun standard library.
- * Database isolation: Copies production DB to /tmp/aras_e2e_test_${pid}.sqlite.
+ * Database isolation: Copies production DB to /tmp/kastor_e2e_test_${pid}.sqlite.
  * ============================================================================
  */
 
@@ -32,7 +32,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../..');
 const prodDbPath = path.join(projectRoot, 'database.sqlite');
-const tempDbPath = `/tmp/aras_e2e_test_${process.pid}.sqlite`;
+const tempDbPath = `/tmp/kastor_e2e_test_${process.pid}.sqlite`;
 
 // ----------------------------------------------------------------------------
 // CLI ARGUMENTS PARSER
@@ -207,12 +207,12 @@ function createHttpClient(baseUrl) {
       const res = await fetch(`${baseUrl}${urlPath}`, opts);
       const setCookie = res.headers.get('set-cookie');
       if (setCookie) {
-        const match = setCookie.match(/aras_session=([^;]*)/);
+        const match = setCookie.match(/(?:kastor_session|aras_session)=([^;]*)/);
         if (match) {
           if (match[1] === '' || setCookie.includes('Max-Age=0')) {
             cookieJar = '';
           } else {
-            cookieJar = `aras_session=${match[1]}`;
+            cookieJar = `kastor_session=${match[1]}`;
           }
         }
       }
@@ -242,7 +242,7 @@ function createHttpClient(baseUrl) {
 // MAIN TEST RUNNER
 // ============================================================================
 console.log('\n================================================================================');
-console.log('🧪 KASTOR AI / ARAS 1.0 — COMPREHENSIVE RESPONSIVE & E2E TEST SUITE');
+console.log('🧪 KASTOR AI — COMPREHENSIVE RESPONSIVE & E2E TEST SUITE');
 console.log('================================================================================');
 console.log(`📂 Isolasi Database: ${tempDbPath}`);
 console.log(`⚙️  Target: ${targetTier ? `Tier ${targetTier}` : 'Seluruh Tier (Tier 1–4)'}\n`);
@@ -1042,7 +1042,7 @@ try {
 // FINAL SUMMARY & RESULTS REPORT
 // ============================================================================
 console.log('\n================================================================================');
-console.log('📊 RINGKASAN HASIL PENGUJIAN RESPONSIVE E2E DASHBOARD ARAS 1.0');
+console.log('📊 RINGKASAN HASIL PENGUJIAN RESPONSIVE E2E DASHBOARD KASTOR AI');
 console.log('================================================================================');
 
 for (const [tierNum, t] of Object.entries(stats.byTier)) {

@@ -234,6 +234,23 @@ export function initDatabase() {
         FOREIGN KEY(group_id) REFERENCES classes(group_id) ON DELETE CASCADE
     );
 
+    -- 17. Daftar Grup yang Dinonaktifkan Respon Bot (/off dan /on)
+    CREATE TABLE IF NOT EXISTS disabled_groups (
+        group_id TEXT PRIMARY KEY,
+        disabled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        disabled_by TEXT
+    );
+
+    -- 18. Daftar Minggu Libur Kas Kelas (Dikecualikan dari Tagihan Kas)
+    CREATE TABLE IF NOT EXISTS cash_holiday_weeks (
+        group_id TEXT NOT NULL,
+        week_number INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_by TEXT,
+        PRIMARY KEY (group_id, week_number),
+        FOREIGN KEY(group_id) REFERENCES classes(group_id) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_web_users_phone ON web_users(phone_number);
     CREATE INDEX IF NOT EXISTS idx_web_sessions_expires ON web_sessions(expires_at);
     CREATE INDEX IF NOT EXISTS idx_web_login_attempts_id_time ON web_login_attempts(identifier, attempt_at);
@@ -245,6 +262,14 @@ export function initDatabase() {
     INSERT OR IGNORE INTO bot_settings (key, value) VALUES ('sticker_limit_count', '1');
     INSERT OR IGNORE INTO bot_settings (key, value) VALUES ('sticker_limit_window_seconds', '120');
     INSERT OR IGNORE INTO bot_settings (key, value) VALUES ('sticker_limit_message', 'Pembuatan sticker sedang limit, mohon tunggu sebentar');
+
+    INSERT OR IGNORE INTO bot_settings (key, value) VALUES ('ai_limit_enabled', '1');
+    INSERT OR IGNORE INTO bot_settings (key, value) VALUES ('ai_limit_window_seconds', '30');
+    INSERT OR IGNORE INTO bot_settings (key, value) VALUES ('ai_limit_message', 'Pemanggilan AI sedang limit, mohon tunggu sebentar');
+
+    INSERT OR IGNORE INTO bot_settings (key, value) VALUES ('tt_limit_enabled', '1');
+    INSERT OR IGNORE INTO bot_settings (key, value) VALUES ('tt_limit_window_seconds', '60');
+    INSERT OR IGNORE INTO bot_settings (key, value) VALUES ('tt_limit_message', 'Pengunduhan video sedang limit, mohon tunggu sebentar');
   `);
 
   // Migrasi safe jika kolom image_path belum ada di database yang sudah dibuat
@@ -315,6 +340,121 @@ export function initDatabase() {
   } catch (e) {
     // ignore
   }
+
+  // Migrasi safe jika tabel disabled_groups belum dibuat di database yang sudah ada
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS disabled_groups (
+          group_id TEXT PRIMARY KEY,
+          disabled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          disabled_by TEXT
+      );
+    `);
+  } catch (e) {
+    // ignore
+  }
+
+  // Migrasi safe jika tabel cash_holiday_weeks belum dibuat di database yang sudah ada
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS cash_holiday_weeks (
+          group_id TEXT NOT NULL,
+          week_number INTEGER NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          created_by TEXT,
+          PRIMARY KEY (group_id, week_number),
+          FOREIGN KEY(group_id) REFERENCES classes(group_id) ON DELETE CASCADE
+      );
+    `);
+  } catch (e) {
+    // ignore
+  }
+}
+
+/**
+ * Mengambil daftar nomor minggu libur kas untuk grup/kelas tertentu
+ */
+export function getCashHolidayWeeks(groupId) {
+  if (!groupId) return [];
+  const targetId = resolveClassGroupId(groupId);
+  if (!targetId) return [];
+  try {
+    const rows = db.prepare('SELECT week_number FROM cash_holiday_weeks WHERE group_id = ? ORDER BY week_number ASC').all(targetId);
+    return rows.map(r => r.week_number);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Menandai minggu kas tertentu sebagai libur
+ */
+export function setCashHolidayWeek(groupId, weekNumber, createdBy = null) {
+  if (!groupId || weekNumber === null || weekNumber === undefined) return;
+  const targetId = resolveClassGroupId(groupId);
+  if (!targetId) return;
+  const parsedWeek = parseInt(weekNumber, 10);
+  if (isNaN(parsedWeek) || parsedWeek < 1 || parsedWeek > 52) return;
+  try {
+    db.prepare(`
+      INSERT INTO cash_holiday_weeks (group_id, week_number, created_by)
+      VALUES (?, ?, ?)
+      ON CONFLICT(group_id, week_number) DO NOTHING
+    `).run(targetId, parsedWeek, createdBy);
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Mengaktifkan kembali minggu kas yang sebelumnya libur (masuk)
+ */
+export function removeCashHolidayWeek(groupId, weekNumber) {
+  if (!groupId || weekNumber === null || weekNumber === undefined) return;
+  const targetId = resolveClassGroupId(groupId);
+  if (!targetId) return;
+  const parsedWeek = parseInt(weekNumber, 10);
+  if (isNaN(parsedWeek) || parsedWeek < 1 || parsedWeek > 52) return;
+  try {
+    db.prepare('DELETE FROM cash_holiday_weeks WHERE group_id = ? AND week_number = ?').run(targetId, parsedWeek);
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Mengecek apakah grup WhatsApp dinonaktifkan (fitur /off)
+ */
+export function isGroupDisabled(groupId) {
+  if (!groupId) return false;
+  try {
+    const row = db.prepare('SELECT 1 FROM disabled_groups WHERE group_id = ?').get(groupId);
+    return !!row;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Menonaktifkan respon bot di grup tertentu (/off)
+ */
+export function setGroupDisabled(groupId, disabledBy = null) {
+  if (!groupId) return;
+  db.prepare(`
+    INSERT INTO disabled_groups (group_id, disabled_at, disabled_by)
+    VALUES (?, CURRENT_TIMESTAMP, ?)
+    ON CONFLICT(group_id) DO UPDATE SET
+      disabled_at = CURRENT_TIMESTAMP,
+      disabled_by = excluded.disabled_by
+  `).run(groupId, disabledBy);
+}
+
+/**
+ * Mengaktifkan kembali respon bot di grup tertentu (/on)
+ */
+export function setGroupEnabled(groupId) {
+  if (!groupId) return;
+  db.prepare('DELETE FROM disabled_groups WHERE group_id = ?').run(groupId);
 }
 
 /**
