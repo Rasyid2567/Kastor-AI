@@ -1821,202 +1821,100 @@
     const activeAssignments = d.active_assignments || [];
 
     const statsCardsHtml = `
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-header">
-            <span class="stat-label">Identitas Kelas Aktif</span>
-            <span class="stat-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-            </span>
-          </div>
-          <div class="stat-value" style="font-size: 1.15rem;">${escapeHtml(cls.class_name)}</div>
-          <div class="stat-footer">
-            <span>TA ${escapeHtml(cls.academic_year || '2026/2027')} • Minggu ke-${Number(cls.current_week || 1)}</span>
-            <a href="#structure" class="stat-link" data-navigate="structure">Struktur &rarr;</a>
-          </div>
+      <div class="stats">
+        <div class="card st hi">
+          <small>Siswa terdata</small>
+          <div class="n">${Number(d.student_count || 0)}</div>
+          <div class="d">${Number(d.structure_count || 0)} jabatan pengurus aktif</div>
         </div>
 
-        <div class="stat-card">
-          <div class="stat-header">
-            <span class="stat-label">Total Siswa Terdata</span>
-            <span class="stat-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-            </span>
-          </div>
-          <div class="stat-value">${Number(d.student_count || 0)} <span style="font-size: 0.9rem; font-weight: 500; color: var(--text-muted);">Siswa</span></div>
-          <div class="stat-footer">
-            <span>${Number(d.structure_count || 0)} jabatan pengurus aktif</span>
-            <a href="#students" class="stat-link" data-navigate="students">Data Siswa &rarr;</a>
-          </div>
+        <div class="card st">
+          <small>Kas minggu ini ${d.cash_summary ? `<span class="pill ok">Lunas ${Number(d.cash_summary.lunas_count || 0)}</span>` : ''}</small>
+          <div class="n">${d.cash_summary ? formatRupiah(d.cash_summary.weekly_fee) : '—'}</div>
+          <div class="d">${d.cash_summary ? `Menunggak ${Number(d.cash_summary.menunggak_count || 0)} siswa` : 'Kas tidak aktif'}</div>
         </div>
 
-        <div class="stat-card">
-          <div class="stat-header">
-            <span class="stat-label">Tugas &amp; PR Aktif</span>
-            <span class="stat-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            </span>
-          </div>
-          <div class="stat-value">${Number(d.active_assignments_count || 0)} <span style="font-size: 0.9rem; font-weight: 500; color: var(--text-muted);">PR Aktif</span></div>
-          <div class="stat-footer">
-            <span>${Number(d.completed_assignments_count || 0)} tugas telah selesai</span>
-            <a href="#assignments" class="stat-link" data-navigate="assignments">Kelola PR &rarr;</a>
-          </div>
+        <div class="card st">
+          <small>Tugas aktif</small>
+          <div class="n">${Number(d.active_assignments_count || 0)}</div>
+          <div class="d">${Number(d.completed_assignments_count || 0)} tugas telah selesai</div>
         </div>
 
-        ${
-          showCashCard
-            ? `
-          <div class="stat-card">
-            <div class="stat-header">
-              <span class="stat-label">Ringkasan Kas Kelas</span>
-              <span class="stat-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-              </span>
-            </div>
-            <div class="stat-value">${formatRupiah(d.cash_summary.weekly_fee)}<span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">/mgg</span></div>
-            <div class="stat-footer">
-              <span>Lunas: ${Number(d.cash_summary.lunas_count || 0)} • Menunggak: ${Number(d.cash_summary.menunggak_count || 0)}</span>
-              <a href="#cash" class="stat-link" data-navigate="cash">Rekap Kas &rarr;</a>
-            </div>
-          </div>
-        `
-            : ''
-        }
+        <div class="card st">
+          <small>Minggu berjalan</small>
+          <div class="n">${Number(cls.current_week || 1)}</div>
+          <div class="d">TA ${escapeHtml(cls.academic_year || '2026/2027')}</div>
+        </div>
       </div>
     `;
 
     const scheduleSectionHtml = `
-      <section class="panel">
-        <div class="panel-header">
-          <div class="panel-title-group">
-            <h2 class="panel-title">Jadwal KBM Hari Ini (${escapeHtml(DAY_NAMES[cls.day_index] || 'Hari Ini')})</h2>
-            <p class="panel-subtitle">Minggu Berjalan ke-${Number(cls.current_week || 1)} • ${escapeHtml(cls.class_name)}</p>
+      <div class="card">
+        <div class="ph">
+          <div>
+            <h2 style="font-size: 15px; margin: 0;">Jadwal hari ini</h2>
+            <small style="color: var(--text-muted); font-size: 12px;">${escapeHtml(DAY_NAMES[cls.day_index] || 'Hari Ini')}, minggu ke-${Number(cls.current_week || 1)}</small>
           </div>
-          <div class="panel-actions">
-            <button type="button" class="btn btn-secondary btn-sm" data-navigate="schedules">Lihat Jadwal Penuh</button>
-          </div>
+          <button type="button" class="btn" data-navigate="schedules" style="text-decoration: none; height: 32px; font-size: 12px;">Lihat semua</button>
         </div>
-        <div class="panel-body ${todaySchedules.length > 0 ? 'no-pad' : ''}">
-          ${
-            todaySchedules.length === 0
-              ? renderEmptyState({
-                  title: 'Tidak Ada Jadwal KBM Hari Ini',
-                  description:
-                    cls.day_index === 0 || cls.day_index === 6
-                      ? 'Hari ini adalah akhir pekan (libur KBM). Gunakan halaman Jadwal Pelajaran untuk melihat jadwal minggu depan.'
-                      : 'Belum ada mata pelajaran yang dijadwalkan untuk hari ini.'
-                })
-              : `
-              <!-- Timeline Vertikal Mobile (< 768px) -->
-              <div class="mobile-card-list" style="padding: 10px;">
-                ${todaySchedules
-                  .map(
-                    (s) => `
-                  <div class="mobile-data-card" style="padding: 10px 12px; gap: 4px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                      <span class="font-mono" style="font-size: 0.82rem; font-weight: 600; color: var(--accent);">${escapeHtml(s.time_start)} – ${escapeHtml(s.time_end)}</span>
-                      <span class="badge ${s.block_type === 'BENGKEL' ? 'badge-warning' : 'badge-info'}" style="font-size: 0.68rem; padding: 1px 6px;">
-                        ${escapeHtml(s.block_type || 'TEORI')}
-                      </span>
-                    </div>
-                    <div style="font-weight: 600; font-size: 0.92rem; color: var(--text);">${escapeHtml(s.subject_name)}</div>
-                    <div style="font-size: 0.78rem; color: var(--text-muted);">${escapeHtml(s.teacher_name)} • ${escapeHtml(s.room_name)}</div>
+        ${
+          todaySchedules.length === 0
+            ? '<div class="sm" style="text-align: center; padding: 24px; color: var(--text-muted);">Tidak ada jadwal KBM hari ini</div>'
+            : todaySchedules
+                .map(
+                  (s) => `
+                <div class="row">
+                  <span class="mo" style="color: var(--accent); font-weight: 600; width: 70px; font-size: 12px;">${escapeHtml(s.time_start)}</span>
+                  <div style="min-width: 0; flex: 1;">
+                    <b style="display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(s.subject_name)}</b>
+                    <small style="color: var(--text-muted); font-size: 12px;">${escapeHtml(s.room_name || 'Ruang')} · ${escapeHtml(s.teacher_name || '-')}</small>
                   </div>
-                `
-                  )
-                  .join('')}
-              </div>
-
-              <!-- Tabel Jadwal Desktop (>= 768px) -->
-              <div class="desktop-table-container table-responsive">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Jam</th>
-                      <th>Blok</th>
-                      <th>Mata Pelajaran</th>
-                      <th>Guru Pengampu</th>
-                      <th>Ruang</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${todaySchedules
-                      .map(
-                        (s) => `
-                      <tr>
-                        <td class="font-mono">${escapeHtml(s.time_start)} – ${escapeHtml(s.time_end)}</td>
-                        <td>
-                          <span class="badge ${s.block_type === 'BENGKEL' ? 'badge-warning' : 'badge-info'}">
-                            ${escapeHtml(s.block_type || 'TEORI')}
-                          </span>
-                        </td>
-                        <td><strong>${escapeHtml(s.subject_name)}</strong></td>
-                        <td>${escapeHtml(s.teacher_name)}</td>
-                        <td>${escapeHtml(s.room_name)}</td>
-                      </tr>
-                    `
-                      )
-                      .join('')}
-                  </tbody>
-                </table>
-              </div>
-            `
-          }
-        </div>
-      </section>
+                  <div class="r">
+                    <span class="pill ${s.block_type === 'BENGKEL' ? 'wn' : 'ok'}">${escapeHtml(s.block_type || 'Teori')}</span>
+                  </div>
+                </div>
+              `
+                )
+                .join('')
+        }
+      </div>
     `;
 
     const prSectionHtml = `
-      <section class="panel">
-        <div class="panel-header">
-          <div class="panel-title-group">
-            <h2 class="panel-title">Daftar Tugas &amp; PR Aktif</h2>
-            <p class="panel-subtitle">Diurutkan berdasarkan tenggat waktu terdekat</p>
+      <div class="card">
+        <div class="ph">
+          <div>
+            <h2 style="font-size: 15px; margin: 0;">Tugas terdekat</h2>
+            <small style="color: var(--text-muted); font-size: 12px;">Dari tenggat terdekat</small>
           </div>
-          <div class="panel-actions">
-            <button type="button" class="btn btn-secondary btn-sm" data-navigate="assignments">Semua PR</button>
-          </div>
+          <button type="button" class="btn" data-navigate="assignments" style="text-decoration: none; height: 32px; font-size: 12px;">Semua</button>
         </div>
-        <div class="panel-body">
-          ${
-            activeAssignments.length === 0
-              ? renderEmptyState({
-                  title: 'Tidak Ada PR Aktif',
-                  description: 'Semua tugas kelas saat ini telah selesai dikerjakan.'
-                })
-              : `
-              <div class="assignment-list">
-                ${activeAssignments
-                  .slice(0, 5)
-                  .map(
-                    (a) => `
-                  <div class="assignment-card">
-                    <div class="assignment-main">
-                      <div class="assignment-meta-top">
-                        <span class="badge badge-warning">Aktif</span>
-                        <span class="assignment-subject">${escapeHtml(a.subject)}</span>
-                      </div>
-                      <p class="assignment-desc">${escapeHtml(a.description)}</p>
-                      <div class="assignment-footer-meta">
-                        <span class="font-mono">Tenggat: ${escapeHtml(a.deadline)}</span>
-                        <span>Oleh: ${escapeHtml(a.created_by)}</span>
-                      </div>
-                    </div>
+        ${
+          activeAssignments.length === 0
+            ? '<div class="sm" style="text-align: center; padding: 24px; color: var(--text-muted);">Tidak ada tugas aktif</div>'
+            : activeAssignments
+                .slice(0, 5)
+                .map(
+                  (a) => `
+                <div class="row">
+                  <div style="min-width: 0; flex: 1;">
+                    <b style="display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(a.title || a.subject || 'Tugas')}</b>
+                    <small style="color: var(--text-muted); font-size: 12px;">${escapeHtml(a.subject_name || a.subject || 'Umum')} · ${escapeHtml(a.deadline || 'Tanpa tenggat')}</small>
                   </div>
-                `
-                  )
-                  .join('')}
-              </div>
-            `
-          }
-        </div>
-      </section>
+                  <div class="r">
+                    <span class="pill ${a.is_urgent ? 'hi' : 'ok'}">${a.is_urgent ? 'Mendesak' : 'Baru'}</span>
+                  </div>
+                </div>
+              `
+                )
+                .join('')
+        }
+      </div>
     `;
 
     container.innerHTML = `
       ${statsCardsHtml}
-      <div class="dashboard-split">
+      <div class="g2">
         ${scheduleSectionHtml}
         ${prSectionHtml}
       </div>
@@ -2050,147 +1948,139 @@
     const list = state.students;
 
     container.innerHTML = `
-      <div class="toolbar">
-        <div class="toolbar-group">
-          <div class="search-box">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <div class="ph" style="margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <div class="chips" style="margin: 0;">
+          <button type="button" class="on">Semua · ${list.length}</button>
+          <button type="button">Laki-laki</button>
+          <button type="button">Perempuan</button>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <div class="search hide-mobile" style="height: 38px; width: 220px; display: flex; align-items: center; gap: 8px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; color: var(--text-muted);">
+            <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
             <input
               type="search"
               id="student-search-input"
-              class="form-input"
-              placeholder="Cari nama siswa, NIS, nomor HP, atau alamat..."
+              placeholder="Cari siswa, NIS, atau HP..."
               value="${escapeHtml(state.studentSearch)}"
+              style="background: none; border: 0; outline: 0; color: var(--text); width: 100%; font: inherit; font-size: 13px;"
             />
           </div>
-          <span class="badge badge-neutral">${list.length} Siswa Ditampilkan</span>
-        </div>
-        ${
-          canWrite
-            ? `
-          <div class="panel-actions">
-            <button type="button" id="btn-open-import-students" class="btn btn-secondary btn-sm">
+          ${
+            canWrite
+              ? `
+            <button type="button" id="btn-open-import-students" class="btn" style="height: 38px;">
               Impor Massal
             </button>
-            <button type="button" id="btn-open-add-student" class="btn btn-primary btn-sm hide-mobile">
-              + Tambah Siswa
+            <button type="button" id="btn-open-add-student" class="btn p hd" style="height: 38px;">
+              <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Tambah siswa</span>
             </button>
-          </div>
-        `
-            : `<span class="badge badge-neutral">Mode Baca Saja (${escapeHtml(state.currentUser?.role)})</span>`
-        }
+          `
+              : `<span class="badge badge-neutral">Mode Baca Saja (${escapeHtml(state.currentUser?.role)})</span>`
+          }
+        </div>
       </div>
 
-      <section class="panel">
-        <div class="panel-body ${list.length > 0 ? 'no-pad' : ''}">
-          ${
-            list.length === 0
-              ? renderEmptyState({
-                  title: state.studentSearch ? 'Siswa Tidak Ditemukan' : 'Belum Ada Data Siswa',
-                  description: state.studentSearch
-                    ? `Tidak ditemukan siswa yang cocok dengan kata kunci "${state.studentSearch}".`
-                    : 'Belum ada siswa yang terdaftar pada kelas ini.',
-                  actionLabel: canWrite && !state.studentSearch ? '+ Tambah Siswa Pertama' : '',
-                  actionId: canWrite && !state.studentSearch ? 'btn-empty-add-student' : ''
-                })
-              : `
-              <!-- Daftar Kartu Siswa Mobile (< 768px) -->
-              <div class="mobile-card-list">
+      ${
+        list.length === 0
+          ? renderEmptyState({
+              title: state.studentSearch ? 'Siswa Tidak Ditemukan' : 'Belum Ada Data Siswa',
+              description: state.studentSearch
+                ? `Tidak ditemukan siswa yang cocok dengan kata kunci "${state.studentSearch}".`
+                : 'Belum ada siswa yang terdaftar pada kelas ini.',
+              actionLabel: canWrite && !state.studentSearch ? '+ Tambah Siswa Pertama' : '',
+              actionId: canWrite && !state.studentSearch ? 'btn-empty-add-student' : ''
+            })
+          : `
+          <!-- Tabel Siswa Desktop (>= 901px) -->
+          <div class="tw dt">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th style="width: 70px;">Absen</th>
+                  <th>Nama</th>
+                  <th>NIS</th>
+                  <th>WhatsApp</th>
+                  <th style="width: 170px; text-align: right;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
                 ${list
                   .map(
                     (s) => `
-                  <div class="mobile-data-card">
-                    <div class="mobile-card-top">
-                      <div class="mobile-card-identity">
-                        <span class="student-circle-num">#${Number(s.student_number)}</span>
-                        <div style="min-width: 0;">
-                          <div class="mobile-card-title">${escapeHtml(s.name)}</div>
-                          <div class="mobile-card-meta">
-                            <span class="font-mono">${escapeHtml(s.nis || '—')}</span>
-                            <span>•</span>
-                            <span class="font-mono">${escapeHtml(formatPhoneDisplay(s.phone_number))}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    ${s.address ? `<div style="font-size: 0.78rem; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(s.address)}</div>` : ''}
-                    <div class="mobile-card-actions">
-                      <button type="button" class="btn btn-secondary btn-xs" data-student-detail="${Number(s.id)}">
-                        Detail
-                      </button>
-                      ${
-                        canWrite
-                          ? `
-                        <button type="button" class="btn btn-secondary btn-xs" data-student-edit="${Number(s.id)}">
-                          Edit
-                        </button>
-                        <button type="button" class="btn btn-danger-soft btn-xs" data-student-delete="${Number(s.id)}">
-                          Hapus
-                        </button>
-                      `
-                          : ''
-                      }
-                    </div>
-                  </div>
+                  <tr>
+                    <td class="mo" style="color: var(--text-muted);">#${Number(s.student_number)}</td>
+                    <td>
+                      <b>${escapeHtml(s.name)}</b>
+                      ${s.address ? `<small>${escapeHtml(s.address)}</small>` : ''}
+                    </td>
+                    <td class="mo">${escapeHtml(s.nis || '—')}</td>
+                    <td class="mo">${escapeHtml(formatPhoneDisplay(s.phone_number))}</td>
+                    <td style="text-align: right;">
+                      <span class="acts">
+                        <button type="button" data-student-detail="${Number(s.id)}">Detail</button>
+                        ${
+                          canWrite
+                            ? `
+                          <button type="button" data-student-edit="${Number(s.id)}">Ubah</button>
+                          <button type="button" class="d" data-student-delete="${Number(s.id)}">Hapus</button>
+                        `
+                            : ''
+                        }
+                      </span>
+                    </td>
+                  </tr>
                 `
                   )
                   .join('')}
-              </div>
+              </tbody>
+            </table>
+          </div>
 
-              <!-- Tabel Siswa Desktop (>= 768px) -->
-              <div class="desktop-table-container table-responsive">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th style="width: 80px;">No. Absen</th>
-                      <th>Nama Lengkap</th>
-                      <th>NIS</th>
-                      <th>No. WhatsApp</th>
-                      <th class="text-right">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${list
-                      .map(
-                        (s) => `
-                      <tr>
-                        <td class="font-mono" data-label="No. Absen"><strong>#${Number(s.student_number)}</strong></td>
-                        <td data-label="Nama Lengkap">
-                          <div style="font-weight: 600;">${escapeHtml(s.name)}</div>
-                          ${s.address ? `<div class="text-subtle" style="font-size: 0.76rem;">${escapeHtml(s.address)}</div>` : ''}
-                        </td>
-                        <td class="font-mono" data-label="NIS">${escapeHtml(s.nis || '—')}</td>
-                        <td class="font-mono" data-label="No. WhatsApp">${escapeHtml(formatPhoneDisplay(s.phone_number))}</td>
-                        <td class="text-right" data-label="Aksi">
-                          <div class="table-actions">
-                            <button type="button" class="btn btn-secondary btn-xs" data-student-detail="${Number(s.id)}">
-                              Detail
-                            </button>
-                            ${
-                              canWrite
-                                ? `
-                              <button type="button" class="btn btn-secondary btn-xs" data-student-edit="${Number(s.id)}">
-                                Edit
-                              </button>
-                              <button type="button" class="btn btn-danger btn-xs" data-student-delete="${Number(s.id)}">
-                                Hapus
-                              </button>
-                            `
-                                : ''
-                            }
-                          </div>
-                        </td>
-                      </tr>
+          <!-- Mobile Cards (< 901px) -->
+          <div class="mcards">
+            ${list
+              .map(
+                (s) => `
+              <div class="mc">
+                <div class="t">
+                  <div>
+                    <b>${escapeHtml(s.name)}</b>
+                    <small>${escapeHtml(s.address || s.nis || 'Siswa Kelas')}</small>
+                  </div>
+                  <span class="pill mo">#${Number(s.student_number)}</span>
+                </div>
+                <div class="f">
+                  <span class="mo">${escapeHtml(formatPhoneDisplay(s.phone_number))}</span>
+                  <span class="acts">
+                    <button type="button" data-student-detail="${Number(s.id)}">Detail</button>
+                    ${
+                      canWrite
+                        ? `
+                      <button type="button" data-student-edit="${Number(s.id)}">Ubah</button>
+                      <button type="button" class="d" data-student-delete="${Number(s.id)}">Hapus</button>
                     `
-                      )
-                      .join('')}
-                  </tbody>
-                </table>
+                        : ''
+                    }
+                  </span>
+                </div>
               </div>
             `
-          }
-        </div>
-      </section>
-      ${canWrite ? `<button type="button" class="fab" id="fab-add-student" aria-label="Tambah Siswa" title="Tambah Siswa">+</button>` : ''}
+              )
+              .join('')}
+          </div>
+        `
+      }
+      ${
+        canWrite
+          ? `
+        <button type="button" class="fab hide-desktop" id="fab-add-student" aria-label="Tambah Siswa">
+          <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Siswa</span>
+        </button>
+      `
+          : ''
+      }
     `;
 
     document.getElementById('fab-add-student')?.addEventListener('click', () => {
@@ -2469,186 +2359,43 @@
   }
 
   function renderSchedulesHoursView() {
+    const JAM = {
+      'Senin': ['5 Jam + Upacara', [['07:00 – 07:50', 'Upacara Bendera'], ['07:50 – 09:10', 'Jam Ke-1'], ['09:10 – 10:45', 'Jam Ke-2'], ['10:45 – 12:05', 'Jam Ke-3'], ['12:05 – 12:50', 'Istirahat 2 & ISHOMA'], ['12:50 – 14:10', 'Jam Ke-4'], ['14:10 – 15:30', 'Jam Ke-5']]],
+      'Selasa & Rabu': ['5 Jam Pelajaran', [['07:00 – 08:30', 'Jam Ke-1'], ['08:30 – 10:00', 'Jam Ke-2'], ['10:00 – 10:15', 'Istirahat 1'], ['10:15 – 11:45', 'Jam Ke-3'], ['11:45 – 12:30', 'Istirahat 2 & ISHOMA'], ['12:30 – 14:00', 'Jam Ke-4'], ['14:00 – 15:30', 'Jam Ke-5']]],
+      'Kamis': ['5 Jam Pelajaran', [['07:00 – 08:30', 'Jam Ke-1'], ['08:30 – 10:00', 'Jam Ke-2'], ['10:00 – 10:15', 'Istirahat 1'], ['10:15 – 11:45', 'Jam Ke-3'], ['11:45 – 12:30', 'Istirahat 2 & ISHOMA'], ['12:30 – 14:00', 'Jam Ke-4'], ['14:00 – 15:00', 'Jam Ke-5']]],
+      'Jumat': ['5 Jam + Refleksi', [['07:00 – 08:30', 'Jam Ke-1'], ['08:30 – 10:00', 'Jam Ke-2'], ['10:00 – 10:15', 'Istirahat 1'], ['10:15 – 11:45', 'Jam Ke-3'], ['11:45 – 13:00', 'Sholat Jumat & ISHOMA'], ['13:00 – 14:30', 'Jam Ke-4'], ['14:30 – 15:15', 'Jam Ke-5'], ['15:15 – 16:00', 'Refleksi']]]
+    };
+
+    const cols = Object.entries(JAM).map(([hari, [ket, slots]]) => `
+      <div class="card">
+        <div class="ph">
+          <h2 style="display: flex; gap: 8px; align-items: center; font-size: 15px; margin: 0;">
+            <svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+            ${hari}
+          </h2>
+          <span class="pill">${ket}</span>
+        </div>
+        ${slots.map(([t, l]) => `
+          <div class="row" style="padding: 10px 12px; margin-bottom: 6px;">
+            <span class="mo" style="font-size: 12px; font-weight: 600; white-space: nowrap;">${t}</span>
+            <span style="margin-left: auto; font-size: 13px; text-align: right; ${/Istirahat|ISHOMA|Upacara|Refleksi/.test(l) ? 'color: var(--text-muted);' : 'font-weight: 600;'}">${l}</span>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+
     return `
-      <section class="panel">
-        <div class="panel-header">
-          <div class="panel-title-group">
-            <h2 class="panel-title">Alokasi Jam Belajar Mengajar (KBM)</h2>
-            <p class="panel-subtitle">Struktur pembagian sesi jam pelajaran dan waktu istirahat harian SMKN 1 Jenangan Ponorogo</p>
+      <div class="card" style="margin-bottom: 14px;">
+        <div class="ph">
+          <div>
+            <h2 style="font-size: 15px; margin: 0;">Alokasi Jam Belajar Mengajar (KBM)</h2>
+            <small style="color: var(--text-muted); font-size: 12px;">Struktur sesi jam pelajaran dan waktu istirahat harian SMKN 1 Jenangan Ponorogo</small>
           </div>
         </div>
-        <div class="panel-body">
-          <div class="hours-grid">
-            <!-- SENIN -->
-            <div class="hours-day-card">
-              <div class="hours-day-header">
-                <div class="hours-day-title">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  <span>Senin</span>
-                </div>
-                <span class="badge badge-neutral" style="font-size: 0.72rem;">5 Jam + Upacara</span>
-              </div>
-              <div class="hours-timeline-list">
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">07:00 – 07:50</span>
-                  <span class="hours-slot-name">Upacara Bendera</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">07:50 – 09:10</span>
-                  <span class="hours-slot-name">Jam Ke-1</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">09:10 – 10:45</span>
-                  <span class="hours-slot-name">Jam Ke-2</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">10:45 – 12:05</span>
-                  <span class="hours-slot-name">Jam Ke-3</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">12:05 – 12:50</span>
-                  <span class="hours-slot-name">Istirahat 2 &amp; ISHOMA</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">12:50 – 14:10</span>
-                  <span class="hours-slot-name">Jam Ke-4</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">14:10 – 15:30</span>
-                  <span class="hours-slot-name">Jam Ke-5</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- SELASA & RABU -->
-            <div class="hours-day-card">
-              <div class="hours-day-header">
-                <div class="hours-day-title">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  <span>Selasa &amp; Rabu</span>
-                </div>
-                <span class="badge badge-neutral" style="font-size: 0.72rem;">5 Jam Pelajaran</span>
-              </div>
-              <div class="hours-timeline-list">
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">07:00 – 08:30</span>
-                  <span class="hours-slot-name">Jam Ke-1</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">08:30 – 10:00</span>
-                  <span class="hours-slot-name">Jam Ke-2</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">10:00 – 10:15</span>
-                  <span class="hours-slot-name">Istirahat 1</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">10:15 – 11:45</span>
-                  <span class="hours-slot-name">Jam Ke-3</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">11:45 – 12:30</span>
-                  <span class="hours-slot-name">Istirahat 2 &amp; ISHOMA</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">12:30 – 14:00</span>
-                  <span class="hours-slot-name">Jam Ke-4</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">14:00 – 15:30</span>
-                  <span class="hours-slot-name">Jam Ke-5</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- KAMIS -->
-            <div class="hours-day-card">
-              <div class="hours-day-header">
-                <div class="hours-day-title">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  <span>Kamis</span>
-                </div>
-                <span class="badge badge-neutral" style="font-size: 0.72rem;">5 Jam Pelajaran</span>
-              </div>
-              <div class="hours-timeline-list">
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">07:00 – 08:30</span>
-                  <span class="hours-slot-name">Jam Ke-1</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">08:30 – 10:00</span>
-                  <span class="hours-slot-name">Jam Ke-2</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">10:00 – 10:15</span>
-                  <span class="hours-slot-name">Istirahat 1</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">10:15 – 11:45</span>
-                  <span class="hours-slot-name">Jam Ke-3</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">11:45 – 12:30</span>
-                  <span class="hours-slot-name">Istirahat 2 &amp; ISHOMA</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">12:30 – 14:00</span>
-                  <span class="hours-slot-name">Jam Ke-4</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">14:00 – 15:00</span>
-                  <span class="hours-slot-name">Jam Ke-5</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- JUMAT -->
-            <div class="hours-day-card">
-              <div class="hours-day-header">
-                <div class="hours-day-title">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  <span>Jumat</span>
-                </div>
-                <span class="badge badge-neutral" style="font-size: 0.72rem;">5 Jam + Refleksi</span>
-              </div>
-              <div class="hours-timeline-list">
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">07:00 – 08:30</span>
-                  <span class="hours-slot-name">Jam Ke-1</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">08:30 – 10:00</span>
-                  <span class="hours-slot-name">Jam Ke-2</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">10:00 – 10:15</span>
-                  <span class="hours-slot-name">Istirahat 1</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">10:15 – 11:45</span>
-                  <span class="hours-slot-name">Jam Ke-3</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">11:45 – 13:00</span>
-                  <span class="hours-slot-name">Sholat Jumat &amp; ISHOMA</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">13:00 – 14:30</span>
-                  <span class="hours-slot-name">Jam Ke-4</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">14:30 – 15:15</span>
-                  <span class="hours-slot-name">Jam Ke-5</span>
-                </div>
-                <div class="hours-slot-row">
-                  <span class="hours-slot-time">15:15 – 16:00</span>
-                  <span class="hours-slot-name">Refleksi</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+        ${cols}
+      </div>
     `;
   }
 
@@ -2713,66 +2460,59 @@
     const isHoursTab = (state.scheduleSubTab === 'hours');
 
     container.innerHTML = `
-      <div class="util-subtab-bar mb-3" role="tablist" aria-label="Sub-modul Jadwal">
-        <button type="button" class="util-subtab-btn ${!isHoursTab ? 'active' : ''}" data-sched-subtab="mapel" role="tab" aria-selected="${!isHoursTab}">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-          <span>Jadwal Mata Pelajaran</span>
-        </button>
-        <button type="button" class="util-subtab-btn ${isHoursTab ? 'active' : ''}" data-sched-subtab="hours" role="tab" aria-selected="${isHoursTab}">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span>Alokasi Jam KBM</span>
-        </button>
+      <div class="chips" style="margin-bottom: 14px;">
+        <button type="button" class="${!isHoursTab ? 'on' : ''}" data-sched-subtab="mapel">Jadwal Mata Pelajaran</button>
+        <button type="button" class="${isHoursTab ? 'on' : ''}" data-sched-subtab="hours">Alokasi Jam KBM</button>
       </div>
 
       ${
         isHoursTab
           ? renderSchedulesHoursView()
           : `
-        <div class="toolbar">
-          <div class="toolbar-group">
-            <button type="button" id="btn-week-prev" class="btn btn-secondary btn-sm" ${currentWeek <= 1 ? 'disabled' : ''} title="Minggu Lalu">
-              &larr;<span class="hide-sm"> Minggu Lalu</span>
-            </button>
-            <button type="button" id="btn-week-current" class="btn btn-secondary btn-sm" title="Minggu Ini">
-              <span class="hide-sm">Minggu Ini </span>(Minggu ${state.activeSchoolWeek})
-            </button>
-            <button type="button" id="btn-week-next" class="btn btn-secondary btn-sm" ${currentWeek >= 20 ? 'disabled' : ''} title="Minggu Depan">
-              <span class="hide-sm">Minggu Depan </span>&rarr;
-            </button>
-            ${renderCustomSelectHtml({
-              id: 'schedule-week-select',
-              value: String(currentWeek),
-              options: scheduleWeekOptionsList,
-              style: 'width: auto; min-width: 155px;'
-            })}
+        <div class="card" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; padding: 12px 14px;">
+          <button type="button" id="btn-week-prev" class="btn" ${currentWeek <= 1 ? 'disabled' : ''} title="Minggu Lalu">
+            ← Minggu Lalu
+          </button>
+          <button type="button" id="btn-week-current" class="btn ${currentWeek === state.activeSchoolWeek ? 'p' : ''}" title="Minggu Ini">
+            Minggu Ini (Minggu ${state.activeSchoolWeek})
+          </button>
+          <button type="button" id="btn-week-next" class="btn" ${currentWeek >= 20 ? 'disabled' : ''} title="Minggu Depan">
+            Minggu Depan →
+          </button>
+          ${renderCustomSelectHtml({
+            id: 'schedule-week-select',
+            value: String(currentWeek),
+            options: scheduleWeekOptionsList,
+            style: 'width: auto; min-width: 140px;'
+          })}
 
-            <div class="search-box">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input
-                type="search"
-                id="schedule-teacher-input"
-                class="form-input"
-                placeholder="Cari guru / mapel..."
-                value="${escapeHtml(state.scheduleTeacher)}"
-              />
-            </div>
-          </div>
+          <input
+            type="search"
+            id="schedule-teacher-input"
+            class="fld"
+            style="flex: 1 1 180px; width: auto; min-width: 0; height: 38px; font-size: 13px;"
+            placeholder="Cari guru / mapel..."
+            value="${escapeHtml(state.scheduleTeacher)}"
+          />
 
           ${
             canWrite
-              ? `<button type="button" id="btn-add-schedule" class="btn btn-primary btn-sm hide-mobile">+ Tambah Jadwal</button>`
+              ? `
+            <button type="button" id="btn-add-schedule" class="btn p jdadd" style="height: 38px;">
+              <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Tambah Jadwal</span>
+            </button>
+          `
               : ''
           }
         </div>
 
-        <section class="panel">
-          <div class="panel-header">
-            <div class="panel-title-group">
-              <h2 class="panel-title">Daftar Mata Pelajaran — Minggu ke-${currentWeek}</h2>
-              <p class="panel-subtitle">Menampilkan ${displaySchedules.length} mata pelajaran (Sistem Blok Rolling Harian)</p>
-            </div>
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <div style="padding: 16px 18px; border-bottom: 1px solid var(--border);">
+            <h2 style="font-size: 15px; margin: 0;">Daftar Mata Pelajaran — Minggu ke-${currentWeek}</h2>
+            <small style="color: var(--text-muted); font-size: 12px;">Menampilkan ${displaySchedules.length} mata pelajaran (sistem blok rolling harian)</small>
           </div>
-          <div class="panel-body ${displaySchedules.length > 0 ? 'no-pad' : ''}">
+          <div style="padding: 0;">
             ${
               displaySchedules.length === 0
                 ? renderEmptyState({
@@ -2782,55 +2522,49 @@
                     actionId: canWrite ? 'btn-empty-add-schedule' : ''
                   })
                 : `
-                <!-- Tampilan Jadwal Mobile (< 768px) -->
-                <div class="mobile-card-list">
+                <!-- Mobile Cards (< 901px) -->
+                <div class="mcards" style="padding: 14px;">
                   ${displaySchedules
                     .map(
-                      (item, idx) => `
-                    <div class="schedule-card-compact">
-                      <div class="schedule-card-compact-row">
-                        <span class="badge ${item.block_type === 'BENGKEL' ? 'badge-warning' : 'badge-info'}" style="font-size: 0.72rem; padding: 2px 7px;">
-                          ${escapeHtml(item.block_type)}
-                        </span>
-                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">
-                          ${item.block_type === 'BENGKEL' ? 'Praktik Bengkel' : 'Rolling Senin – Jumat'}
-                        </span>
-                      </div>
-                      <div style="font-weight: 600; font-size: 0.95rem; color: var(--text); margin-top: 4px;">
-                        ${escapeHtml(item.subject_name)}
-                      </div>
-                      <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 3px;">
-                        ${escapeHtml(item.teacher_name)} • <span class="badge badge-neutral" style="font-size: 0.72rem;">${escapeHtml(item.room_name)}</span>
-                      </div>
-                      ${formatScheduleNotes(item.notes) ? `<div style="font-size: 0.76rem; color: var(--text-faint); margin-top: 3px;">${escapeHtml(formatScheduleNotes(item.notes))}</div>` : ''}
-                      ${
-                        canWrite
-                          ? `
-                        <div class="mobile-card-actions" style="margin-top: 8px;">
-                          <button type="button" class="btn btn-secondary btn-xs" data-schedule-edit="${Number(item.id)}">Edit</button>
-                          <button type="button" class="btn btn-danger-soft btn-xs" data-schedule-delete="${Number(item.id)}">Hapus</button>
+                      (item) => `
+                    <div class="mc">
+                      <div class="t">
+                        <div>
+                          <b>${escapeHtml(item.subject_name)}</b>
+                          <small>${escapeHtml(item.teacher_name)}</small>
                         </div>
-                      `
-                          : ''
-                      }
+                        <span class="pill ${item.block_type === 'BENGKEL' ? 'wn' : 'ok'}">${escapeHtml(item.block_type)}</span>
+                      </div>
+                      <div class="f">
+                        <span>${escapeHtml(item.room_name)}</span>
+                        ${
+                          canWrite
+                            ? `
+                          <span class="acts">
+                            <button type="button" data-schedule-edit="${Number(item.id)}">Edit</button>
+                            <button type="button" class="d" data-schedule-delete="${Number(item.id)}">Hapus</button>
+                          </span>
+                        `
+                            : ''
+                        }
+                      </div>
                     </div>
                   `
                     )
                     .join('')}
                 </div>
 
-                <!-- Tabel Jadwal Desktop (>= 768px) -->
-                <div class="desktop-table-container table-responsive">
-                  <table class="data-table">
+                <!-- Desktop Table (>= 901px) -->
+                <div class="tw dt" style="border: 0; border-radius: 0;">
+                  <table class="tbl" style="table-layout: fixed;">
                     <thead>
                       <tr>
-                        <th style="width: 50px; text-align: center;">No</th>
-                        <th style="width: 110px;">Tipe Blok</th>
-                        <th>Mata Pelajaran</th>
-                        <th>Guru Pengampu</th>
-                        <th>Ruangan</th>
-                        <th>Keterangan / Alur</th>
-                        ${canWrite ? '<th class="text-right" style="width: 120px;">Aksi</th>' : ''}
+                        <th style="width: 56px;">No</th>
+                        <th style="width: 120px;">Tipe Blok</th>
+                        <th style="width: 32%;">Mata Pelajaran</th>
+                        <th style="width: 26%;">Guru Pengampu</th>
+                        <th style="width: 160px;">Ruangan</th>
+                        ${canWrite ? '<th style="width: 130px; text-align: right;">Aksi</th>' : ''}
                       </tr>
                     </thead>
                     <tbody>
@@ -2838,35 +2572,23 @@
                         .map(
                           (item, idx) => `
                         <tr>
-                          <td data-label="No" style="text-align: center; color: var(--text-faint); font-weight: 500;">${idx + 1}</td>
-                          <td data-label="Tipe Blok">
-                            <span class="badge ${item.block_type === 'BENGKEL' ? 'badge-warning' : 'badge-info'}">
+                          <td class="mo" style="color: var(--text-muted);">${idx + 1}</td>
+                          <td>
+                            <span class="pill ${item.block_type === 'BENGKEL' ? 'wn' : 'ok'}">
                               ${escapeHtml(item.block_type)}
                             </span>
                           </td>
-                          <td data-label="Mata Pelajaran">
-                            <div style="font-weight: 600; font-size: 0.94rem;">${escapeHtml(item.subject_name)}</div>
-                          </td>
-                          <td data-label="Guru Pengampu">
-                            <span style="font-weight: 500;">${escapeHtml(item.teacher_name)}</span>
-                          </td>
-                          <td data-label="Ruangan">
-                            <span class="badge badge-neutral" style="font-size: 0.78rem;">${escapeHtml(item.room_name)}</span>
-                          </td>
-                          <td data-label="Keterangan / Alur">
-                            <div style="font-size: 0.82rem; color: var(--text-muted);">
-                              ${item.block_type === 'BENGKEL' ? 'Praktikum Bengkel / Lab' : 'Rolling Harian (Senin s/d Jumat)'}
-                            </div>
-                            ${formatScheduleNotes(item.notes) ? `<div class="text-subtle" style="font-size: 0.75rem;">${escapeHtml(formatScheduleNotes(item.notes))}</div>` : ''}
-                          </td>
+                          <td><b style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(item.subject_name)}">${escapeHtml(item.subject_name)}</b></td>
+                          <td><div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(item.teacher_name)}">${escapeHtml(item.teacher_name)}</div></td>
+                          <td><span class="pill">${escapeHtml(item.room_name)}</span></td>
                           ${
                             canWrite
                               ? `
-                            <td class="text-right" data-label="Aksi">
-                              <div class="table-actions">
-                                <button type="button" class="btn btn-secondary btn-xs" data-schedule-edit="${Number(item.id)}">Edit</button>
-                                <button type="button" class="btn btn-danger btn-xs" data-schedule-delete="${Number(item.id)}">Hapus</button>
-                              </div>
+                            <td style="text-align: right;">
+                              <span class="acts">
+                                <button type="button" data-schedule-edit="${Number(item.id)}">Edit</button>
+                                <button type="button" class="d" data-schedule-delete="${Number(item.id)}">Hapus</button>
+                              </span>
                             </td>
                           `
                               : ''
@@ -2881,8 +2603,11 @@
               `
             }
           </div>
-        </section>
-        ${canWrite ? `<button type="button" class="fab" id="fab-add-schedule" aria-label="Tambah Jadwal" title="Tambah Jadwal">+</button>` : ''}
+        </div>
+        ${canWrite ? `<button type="button" class="fab hide-desktop" id="fab-add-schedule" aria-label="Tambah Jadwal">
+          <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Jadwal</span>
+        </button>` : ''}
       `
       }
     `;
@@ -3217,92 +2942,57 @@
     const paidPercent = totalStudents > 0 ? Math.round((paidStudentsCount / totalStudents) * 100) : 0;
 
     container.innerHTML = `
-      <!-- Ringkasan Kas Terpadu Mobile (< 768px) -->
-      <div class="cash-unified-summary hide-desktop">
-        <div class="cash-unified-row-top">
-          <div class="cash-unified-amount">
-            ${formatRupiah(fee)}<span> / siswa / mgg</span>
-          </div>
-          <span class="badge badge-info" style="font-size: 0.76rem;">
-            Minggu ${startCashWeek} – ${maxWeek} (${activeWeeks} Minggu Aktif${holidaysInRange > 0 ? `, ${holidaysInRange} Libur` : ''})
-          </span>
+      <div class="stats kas3">
+        <div class="card st">
+          <small>Tarif per minggu</small>
+          <div class="n">${formatRupiah(fee)}</div>
+          <div class="d">Minggu ${startCashWeek} s/d ${maxWeek} (${activeWeeks} aktif${holidaysInRange > 0 ? `, ${holidaysInRange} libur` : ''})</div>
         </div>
 
-        <div class="cash-progress-box">
-          <div class="cash-progress-labels">
-            <span><strong>${paidStudentsCount}</strong> dari ${totalStudents} siswa lunas</span>
-            <span class="font-mono">${paidPercent}%</span>
-          </div>
-          <div class="cash-progress-bar">
-            <div class="cash-progress-fill" style="width: ${paidPercent}%;"></div>
-          </div>
+        <div class="card st hi">
+          <small>Minggu ${currentCashWeek} · lunas</small>
+          <div class="n">${paidStudentsCount}<span style="font-size: 14px; opacity: .8;"> / ${totalStudents}</span></div>
+          <div class="d">${paidPercent}% siswa sudah bayar</div>
         </div>
 
-        <div class="cash-unified-footer">
-          <div>Bendahara: <strong>${escapeHtml(treasurersText)}</strong></div>
-          <span class="badge ${isEditable ? 'badge-success-soft' : 'badge-neutral'}">
-            ${isEditable ? 'Izin Kelola Aktif' : 'Mode Baca Saja'}
-          </span>
+        <div class="card st">
+          <small>Bendahara</small>
+          <div class="n" style="font-size: 18px; line-height: 1.3;">${escapeHtml(treasurersText)}</div>
+          <div class="d">${isEditable ? 'Izin kelola aktif' : 'Mode baca saja'}</div>
         </div>
       </div>
 
-      <!-- Kartu Statistik Kas Desktop (>= 768px) -->
-      <div class="stats-grid hide-mobile">
-        <div class="stat-card">
-          <div class="stat-header">
-            <span class="stat-label">Tarif Kas Mingguan</span>
-          </div>
-          <div class="stat-value font-mono">${formatRupiah(fee)}</div>
-          <div class="stat-footer">
-            <span>Tarif per siswa per minggu aktif</span>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-header">
-            <span class="stat-label">Jumlah Minggu Aktif</span>
-          </div>
-          <div class="stat-value font-mono">${activeWeeks} <span style="font-size: 0.9rem; font-weight: 500; color: var(--text-muted);">Minggu</span></div>
-          <div class="stat-footer">
-            <span>Minggu ${startCashWeek} s/d ${maxWeek}${holidaysInRange > 0 ? ` (${holidaysInRange} Libur)` : ''} • Total: ${formatRupiah(fee * activeWeeks)}/siswa</span>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-header">
-            <span class="stat-label">Daftar Bendahara Kelas</span>
-          </div>
-          <div class="stat-value" style="font-size: 1.05rem;">${escapeHtml(treasurersText)}</div>
-          <div class="stat-footer">
-            <span>${isEditable ? 'Anda memiliki izin kelola kas' : 'Mode Baca Saja (Read-Only)'}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Toolbar Pemilih Minggu & Pencarian Kas Kelas -->
-      <div class="toolbar" style="margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
-        <div class="toolbar-group" style="flex: 0 0 auto; display: flex; align-items: center; gap: 8px;">
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-cash-prev-week" title="Minggu Lalu" ${currentCashWeek <= startCashWeek ? 'disabled' : ''} style="padding: 6px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-            <span class="hide-mobile">Minggu Lalu</span>
-          </button>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" class="btn" id="btn-cash-prev-week" ${currentCashWeek <= startCashWeek ? 'disabled' : ''}>←</button>
+          <div class="card" style="padding: 8px 14px; font-weight: 700;">Minggu ${currentCashWeek}</div>
+          <button type="button" class="btn" id="btn-cash-next-week" ${currentCashWeek >= endCashWeek ? 'disabled' : ''}>→</button>
           ${renderCustomSelectHtml({
             id: 'cash-week-select',
             value: String(currentCashWeek),
             options: cashWeekOptionsList,
-            style: 'width: auto; min-width: 175px;'
+            style: 'width: auto; min-width: 140px;'
           })}
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-cash-next-week" title="Minggu Depan" ${currentCashWeek >= endCashWeek ? 'disabled' : ''} style="padding: 6px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
-            <span class="hide-mobile">Minggu Depan</span>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
         </div>
 
-        <div class="toolbar-actions" style="margin-left: auto;">
-          <div class="search-box" style="min-width: 220px; max-width: 320px;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="search" id="cash-search-input" class="form-input" placeholder="Cari nama siswa..." value="${escapeHtml(state.cashSearch || '')}" />
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <div class="search hide-mobile" style="height: 38px; width: 200px; display: flex; align-items: center; gap: 8px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; color: var(--text-muted);">
+            <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+            <input type="search" id="cash-search-input" placeholder="Cari siswa..." value="${escapeHtml(state.cashSearch || '')}" style="background: none; border: 0; outline: 0; color: var(--text); width: 100%; font: inherit; font-size: 13px;" />
           </div>
+          ${
+            isEditable
+              ? `
+            <span class="cash-holiday-mobile-group" style="display: inline-flex; align-items: center; gap: 6px;">
+              <button type="button" class="btn ${isCurrentWeekHoliday ? 'p' : ''}" id="btn-toggle-cash-holiday" data-week="${currentCashWeek}">
+                ${isCurrentWeekHoliday ? 'Batal libur' : 'Set libur'}
+              </button>
+              <button type="button" class="btn hide-desktop" id="btn-toggle-cash-holiday-mobile" data-week="${currentCashWeek}" style="display: none;" aria-hidden="true"></button>
+            </span>
+            <button type="button" class="btn" id="btn-toggle-cash-settings" title="Pengaturan Kas">⚙️</button>
+          `
+              : ''
+          }
         </div>
       </div>
 
@@ -3310,11 +3000,8 @@
       ${
         isEditable
           ? `
-        <div class="accordion-panel" id="accordion-cash-settings">
-          <button type="button" class="accordion-toggle" id="btn-toggle-cash-settings" aria-expanded="false">
-            <span>⚙️ Pengaturan Tarif &amp; Minggu Aktif Kas</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
+        <div class="accordion-panel" id="accordion-cash-settings" style="margin-bottom: 14px;">
+          <button type="button" class="accordion-toggle" id="btn-toggle-cash-settings-inner" style="display: none;" aria-expanded="false"></button>
           <div class="accordion-content">
             <form id="cash-settings-form" class="form-row-3" style="align-items: flex-end;">
               <div class="form-group">
@@ -3335,145 +3022,93 @@
           : ''
       }
 
-      <section class="panel">
-        <div class="panel-header">
-          <div class="panel-title-group">
-            <h2 class="panel-title">Tabel Rekapitulasi Kas Siswa</h2>
-            <p class="panel-subtitle" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span>Menampilkan kas: <strong>Minggu ${currentCashWeek}</strong> • Format: centang untuk lunas, nominal untuk tunggakan</span>
-              <span class="cash-holiday-mobile-group hide-desktop" style="display: inline-flex; align-items: center; gap: 6px;">
-                <span class="badge ${isCurrentWeekHoliday ? 'badge-warning' : 'badge-success-soft'}" style="font-size: 0.72rem; padding: 2px 7px;">
-                  ${isCurrentWeekHoliday ? 'Libur' : 'Aktif'}
-                </span>
-                ${isEditable ? `
-                  <button type="button" class="btn btn-sm btn-secondary hide-desktop" id="btn-toggle-cash-holiday-mobile" data-week="${currentCashWeek}" style="padding: 2px 8px; font-size: 0.72rem; border-radius: 4px; cursor: pointer;" title="${isCurrentWeekHoliday ? `Aktifkan kembali Minggu ${currentCashWeek} (Masuk)` : `Tandai Minggu ${currentCashWeek} sebagai Libur Kas`}">
-                    ${isCurrentWeekHoliday ? 'Set Aktif' : 'Set Libur'}
+      ${
+        displayedStudents.length === 0
+          ? renderEmptyState({
+              title: state.cashSearch ? 'Siswa Tidak Ditemukan' : 'Belum Ada Data Siswa untuk Rekap Kas',
+              description: state.cashSearch ? `Tidak ada siswa dengan kata kunci "${escapeHtml(state.cashSearch)}".` : 'Tambahkan daftar siswa terlebih dahulu pada menu Data Siswa.'
+            })
+          : `
+          <!-- Mobile Cards (< 901px) -->
+          <div class="mcards">
+            ${displayedStudents
+              .map((st) => {
+                const paid = Boolean(st.weeks && st.weeks[currentCashWeek]);
+                const ckBtn = `
+                  <button
+                    type="button"
+                    class="ck ${paid ? 'on' : ''} cash-week-btn"
+                    ${isEditable ? `data-toggle-cash="${Number(st.student_id)}:${currentCashWeek}:${paid ? 0 : 1}"` : 'disabled'}
+                    aria-label="${paid ? 'Batal tandai lunas' : 'Tandai lunas'}"
+                  >
+                    ${paid ? '<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px;stroke-width:3;color:#052e1f"><path d="M5 12l5 5 9-10"/></svg>' : ''}
                   </button>
-                ` : ''}
-              </span>
-            </p>
+                `;
+                return `
+                  <div class="mc" style="border-left: 4px solid ${isCurrentWeekHoliday ? 'var(--text-muted)' : paid ? 'var(--accent)' : 'var(--danger)'};">
+                    <div class="t" style="align-items: center;">
+                      <div style="min-width: 0;">
+                        <b>${escapeHtml(st.name)}</b>
+                        <small style="display: block;">Absen #${Number(st.student_number)} · Minggu ${currentCashWeek}</small>
+                        <small style="display: block; font-weight: 700; margin-top: 4px; color: ${paid ? 'var(--accent)' : 'var(--danger)'};">
+                          ${paid ? 'Lunas' : `Kurang ${formatRupiah(st.total_tunggakan || fee)}`}
+                        </small>
+                      </div>
+                      <div>
+                        ${isCurrentWeekHoliday ? '<span class="pill">Libur</span>' : ckBtn}
+                      </div>
+                    </div>
+                  </div>
+                `;
+              })
+              .join('')}
           </div>
-        </div>
-        <div class="panel-body ${displayedStudents.length > 0 ? 'no-pad' : ''}">
-          ${
-            displayedStudents.length === 0
-              ? renderEmptyState({
-                  title: state.cashSearch ? 'Siswa Tidak Ditemukan' : 'Belum Ada Data Siswa untuk Rekap Kas',
-                  description: state.cashSearch ? `Tidak ada siswa dengan kata kunci "${escapeHtml(state.cashSearch)}".` : 'Tambahkan daftar siswa terlebih dahulu pada menu Data Siswa.'
-                })
-              : `
-              <!-- Daftar Kartu Siswa Mobile (< 768px) -->
-              <div class="mobile-card-list">
+
+          <!-- Desktop Table (>= 901px) -->
+          <div class="tw dt">
+            <table class="tbl kasc">
+              <thead>
+                <tr>
+                  <th style="width: 80px;">Absen</th>
+                  <th>Nama siswa</th>
+                  <th style="text-align: right; width: 150px;">Minggu ${currentCashWeek} (${isCurrentWeekHoliday ? 'Libur' : 'Bayar'})</th>
+                </tr>
+              </thead>
+              <tbody>
                 ${displayedStudents
                   .map((st) => {
                     const paid = Boolean(st.weeks && st.weeks[currentCashWeek]);
-                    const btnClass = paid ? 'paid' : (isCurrentWeekHoliday ? 'holiday' : 'unpaid');
-                    const btnTitle = isCurrentWeekHoliday
-                      ? `Minggu ${currentCashWeek}: ${paid ? 'Lunas (Dibayar di Minggu Libur)' : 'Libur Kas (Bebas Tagihan)'}`
-                      : `Minggu ${currentCashWeek}: ${paid ? 'Lunas' : 'Belum Lunas'}`;
-                    const weekChips = [
-                      `
-                        <div class="cash-card-week-slot">
-                          <span class="cash-card-week-label">Minggu ${currentCashWeek}</span>
-                          <button
-                            type="button"
-                            class="cash-week-btn ${btnClass}"
-                            ${isEditable ? `data-toggle-cash="${Number(st.student_id)}:${currentCashWeek}:${paid ? 0 : 1}"` : 'disabled'}
-                            title="${btnTitle}"
-                          >
-                            ${paid ? '✓' : '—'}
-                          </button>
-                        </div>
-                      `
-                    ];
+                    const ckBtn = `
+                      <button
+                        type="button"
+                        class="ck ${paid ? 'on' : ''} cash-week-btn"
+                        ${isEditable ? `data-toggle-cash="${Number(st.student_id)}:${currentCashWeek}:${paid ? 0 : 1}"` : 'disabled'}
+                        aria-label="${paid ? 'Batal tandai lunas' : 'Tandai lunas'}"
+                      >
+                        ${paid ? '<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px;stroke-width:3;color:#052e1f"><path d="M5 12l5 5 9-10"/></svg>' : ''}
+                      </button>
+                    `;
                     return `
-                      <div class="mobile-data-card">
-                        <div class="mobile-card-top">
-                          <div class="mobile-card-identity">
-                            <span class="student-circle-num">#${Number(st.student_number)}</span>
-                            <div style="min-width: 0;">
-                              <div class="mobile-card-title">${escapeHtml(st.name)}</div>
-                            </div>
-                          </div>
-                          <div data-cash-status="${Number(st.student_id)}">
-                            ${
-                              st.is_lunas
-                                ? '<span class="badge badge-success">LUNAS</span>'
-                                : `<span class="badge badge-warning">${escapeHtml(st.status_label)}</span>`
-                            }
-                          </div>
-                        </div>
-                        <div class="cash-weeks-strip">
-                          ${weekChips.join('')}
-                          <div class="cash-card-week-slot">
-                            <span class="cash-card-week-label">Semua</span>
-                            <button type="button" class="cash-week-btn" data-cash-view-all="${Number(st.student_id)}" style="color: var(--accent); font-weight: 600;" title="Lihat rekap seluruh minggu">
-                              &rarr;
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                      <tr>
+                        <td class="mo" style="color: var(--text-muted);">#${Number(st.student_number)}</td>
+                        <td>
+                          <b>${escapeHtml(st.name)}</b>
+                          <small style="display: block; color: ${paid ? 'var(--text-muted)' : 'var(--danger)'};">
+                            ${paid ? 'Lunas minggu ini' : `Kurang ${formatRupiah(st.total_tunggakan || fee)}`}
+                          </small>
+                        </td>
+                        <td style="text-align: right;">
+                          ${isCurrentWeekHoliday ? '<span class="pill">Libur</span>' : ckBtn}
+                        </td>
+                      </tr>
                     `;
                   })
                   .join('')}
-              </div>
-
-              <!-- Tabel Kas Desktop (>= 768px) -->
-              <div class="desktop-table-container table-responsive table-responsive-cash">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th style="width: 70px;">Absen</th>
-                      <th>Nama Siswa</th>
-                      ${weekHeaders.join('')}
-                      <th class="text-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${displayedStudents
-                      .map((st) => {
-                        const paid = Boolean(st.weeks && st.weeks[currentCashWeek]);
-                        const btnClass = paid ? 'paid' : (isCurrentWeekHoliday ? 'holiday' : 'unpaid');
-                        const btnTitle = isCurrentWeekHoliday
-                          ? `Minggu ${currentCashWeek}: ${paid ? 'Lunas (Dibayar di Minggu Libur)' : 'Libur Kas (Bebas Tagihan)'}`
-                          : `Minggu ${currentCashWeek}: ${paid ? 'Lunas' : 'Belum Lunas'}`;
-                        const weekCells = [
-                          `
-                            <td class="text-center">
-                              <button
-                                type="button"
-                                class="cash-week-btn ${btnClass}"
-                                ${isEditable ? `data-toggle-cash="${Number(st.student_id)}:${currentCashWeek}:${paid ? 0 : 1}"` : 'disabled'}
-                                title="${btnTitle}"
-                              >
-                                ${paid ? '✓' : '—'}
-                              </button>
-                            </td>
-                          `
-                        ];
-                        return `
-                          <tr>
-                            <td class="font-mono">#${Number(st.student_number)}</td>
-                            <td><strong>${escapeHtml(st.name)}</strong></td>
-                            ${weekCells.join('')}
-                            <td class="text-right font-mono" data-cash-status="${Number(st.student_id)}">
-                              ${
-                                st.is_lunas
-                                  ? '<span class="badge badge-success">LUNAS</span>'
-                                  : `<span class="badge badge-warning" style="font-weight: 600;">${escapeHtml(st.status_label)}</span>`
-                              }
-                            </td>
-                          </tr>
-                        `;
-                      })
-                      .join('')}
-                  </tbody>
-                </table>
-              </div>
-            `
-          }
-        </div>
-      </section>
+              </tbody>
+            </table>
+          </div>
+        `
+      }
     `;
 
     // Toggle Accordion Pengaturan Kas
@@ -3831,55 +3466,32 @@
 
     container.innerHTML = `
       <!-- 3 Kartu Ringkasan Keuangan (Saldo Saat Ini, Pemasukan Periode, Pengeluaran Periode) -->
-      <div class="stats-grid finance-stat-grid">
-        <div class="stat-card finance-stat-card">
-          <div class="stat-header">
-            <span class="stat-label">Saldo Kas Saat Ini</span>
-            <span class="badge ${balance >= 0 ? 'badge-success-soft' : 'badge-danger-soft'}">
-              ${balance >= 0 ? 'Surplus' : 'Defisit'}
-            </span>
-          </div>
-          <div class="stat-value font-mono ${balanceColorClass}">
-            ${formatRupiah(balance)}
-          </div>
-          <div class="stat-footer">
-            <span>Total Masuk: ${formatRupiah(allTime.total_income || 0)} • Keluar: ${formatRupiah(allTime.total_manual_expense || 0)}</span>
-          </div>
+      <div class="stats kas3" style="margin-bottom: 14px;">
+        <div class="card st hi">
+          <small>Saldo kas saat ini <span class="pill" style="background: rgba(255,255,255,.2); color: #fff; border-color: transparent;">${balance >= 0 ? 'Surplus' : 'Defisit'}</span></small>
+          <div class="n">${formatRupiah(balance)}</div>
+          <div class="d">Total masuk ${formatRupiah(allTime.total_income || 0)} · keluar ${formatRupiah(allTime.total_manual_expense || 0)}</div>
         </div>
 
-        <div class="stat-card finance-stat-card">
-          <div class="stat-header">
-            <span class="stat-label">Pemasukan Periode Ini</span>
-            <span class="badge badge-info font-mono" style="font-size: 0.72rem;">${escapeHtml(formatRangeLabel(currentRange))}</span>
-          </div>
-          <div class="stat-value font-mono text-emerald">
-            +${formatRupiah(period.total_income || 0)}
-          </div>
-          <div class="stat-footer">
-            <span>Kas Siswa & Pemasukan Kelas Terpilih</span>
-          </div>
+        <div class="card st">
+          <small>Pemasukan periode ini <span class="pill">${escapeHtml(formatRangeLabel(currentRange))}</span></small>
+          <div class="n">+${formatRupiah(period.total_income || 0)}</div>
+          <div class="d">Kas siswa &amp; pemasukan kelas</div>
         </div>
 
-        <div class="stat-card finance-stat-card">
-          <div class="stat-header">
-            <span class="stat-label">Pengeluaran Periode Ini</span>
-            <span class="badge badge-danger-soft font-mono" style="font-size: 0.72rem;">${escapeHtml(formatRangeLabel(currentRange))}</span>
-          </div>
-          <div class="stat-value font-mono text-danger">
-            -${formatRupiah(period.total_expense || 0)}
-          </div>
-          <div class="stat-footer">
-            <span>Arus Kas Bersih: <strong class="${period.net >= 0 ? 'text-emerald' : 'text-danger'}">${period.net >= 0 ? '+' : ''}${formatRupiah(period.net)}</strong></span>
-          </div>
+        <div class="card st">
+          <small>Pengeluaran periode ini <span class="pill hi">${escapeHtml(formatRangeLabel(currentRange))}</span></small>
+          <div class="n">-${formatRupiah(period.total_expense || 0)}</div>
+          <div class="d">Arus kas bersih <strong class="${period.net >= 0 ? 'text-emerald' : 'text-danger'}">${period.net >= 0 ? '+' : ''}${formatRupiah(period.net)}</strong></div>
         </div>
       </div>
 
       <!-- Toolbar 2 Filter Dropdown (Rentang Waktu & Format Granularitas) + Tombol Tambah Transaksi -->
-      <div class="toolbar finance-toolbar" style="margin-bottom: 16px;">
-        <div class="toolbar-group">
+      <div class="card" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; margin-bottom: 14px; padding: 12px 14px;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <!-- Dropdown 1: Rentang Waktu -->
           <div style="display: flex; align-items: center; gap: 6px;">
-            <label for="finance-range-select" class="hide-mobile" style="font-size: 0.82rem; color: var(--text-muted); font-weight: 500;">Periode:</label>
+            <span class="lbl" style="padding: 0; color: var(--text-muted); font-size: 11px;">Periode</span>
             ${renderCustomSelectHtml({
               id: 'finance-range-select',
               value: currentRange,
@@ -3896,7 +3508,7 @@
 
           <!-- Dropdown 2: Granularitas Tampilan (Per Hari / Per Minggu) -->
           <div style="display: flex; align-items: center; gap: 6px;">
-            <label for="finance-view-select" class="hide-mobile" style="font-size: 0.82rem; color: var(--text-muted); font-weight: 500;">Tampilan:</label>
+            <span class="lbl" style="padding: 0; color: var(--text-muted); font-size: 11px;">Tampilan</span>
             ${renderCustomSelectHtml({
               id: 'finance-view-select',
               value: currentGroupBy,
@@ -3912,11 +3524,10 @@
         ${
           isEditable
             ? `
-          <div class="toolbar-actions">
-            <button type="button" id="btn-open-add-transaction" class="btn btn-primary btn-sm">
-              + Catat Transaksi
-            </button>
-          </div>
+          <button type="button" id="btn-open-add-transaction" class="btn p" style="height: 38px;">
+            <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            <span>Catat Transaksi</span>
+          </button>
         `
             : ''
         }
@@ -4503,109 +4114,100 @@
     const items = state.assignments;
 
     container.innerHTML = `
-      <div class="toolbar">
-        <div class="toolbar-group">
-          <div class="subtabs" role="tablist">
-            <button
-              type="button"
-              class="subtab-btn ${state.assignmentFilter === 'active' ? 'active' : ''}"
-              data-pr-filter="active"
-            >
-              Tugas Aktif
-            </button>
-            <button
-              type="button"
-              class="subtab-btn ${state.assignmentFilter === 'all' ? 'active' : ''}"
-              data-pr-filter="all"
-            >
-              Riwayat Seluruh PR
-            </button>
-          </div>
-          <span class="badge badge-neutral">${items.length} Tugas</span>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
+        <div class="chips" style="margin: 0;">
+          <button
+            type="button"
+            class="${state.assignmentFilter === 'active' ? 'on' : ''}"
+            data-pr-filter="active"
+          >
+            Aktif · ${items.length}
+          </button>
+          <button
+            type="button"
+            class="${state.assignmentFilter === 'all' ? 'on' : ''}"
+            data-pr-filter="all"
+          >
+            Riwayat
+          </button>
         </div>
 
         ${
           canWrite
-            ? `<button type="button" id="btn-add-assignment" class="btn btn-primary btn-sm hide-mobile">+ Tambah Tugas / PR</button>`
+            ? `
+          <button type="button" id="btn-add-assignment" class="btn p hd" style="height: 38px;">
+            <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            <span>Tambah tugas</span>
+          </button>
+        `
             : ''
         }
       </div>
 
-      <section class="panel">
-        <div class="panel-body">
-          ${
-            items.length === 0
-              ? renderEmptyState({
-                  title:
-                    state.assignmentFilter === 'active'
-                      ? 'Belum Ada Tugas Aktif untuk Kelas Ini'
-                      : 'Belum Ada Riwayat Tugas & PR',
-                  description:
-                    state.assignmentFilter === 'active'
-                      ? 'Seluruh pekerjaan rumah telah diselesaikan atau belum ada tugas baru.'
-                      : 'Belum ada catatan tugas yang pernah dibuat di kelas ini.',
-                  actionLabel: canWrite ? '+ Buat Tugas Baru' : '',
-                  actionId: canWrite ? 'btn-empty-add-assignment' : ''
-                })
-              : `
-              <div class="assignment-list">
-                ${items
-                  .map((a) => {
-                    let badgeHtml = '';
-                    if (a.is_completed) {
-                      badgeHtml = '<span class="badge badge-success">Selesai</span>';
+      <div class="card">
+        ${
+          items.length === 0
+            ? renderEmptyState({
+                title:
+                  state.assignmentFilter === 'active'
+                    ? 'Belum Ada Tugas Aktif untuk Kelas Ini'
+                    : 'Belum Ada Riwayat Tugas & PR',
+                description:
+                  state.assignmentFilter === 'active'
+                    ? 'Seluruh pekerjaan rumah telah diselesaikan atau belum ada tugas baru.'
+                    : 'Belum ada catatan tugas yang pernah dibuat di kelas ini.',
+                actionLabel: canWrite ? '+ Buat Tugas Baru' : '',
+                actionId: canWrite ? 'btn-empty-add-assignment' : ''
+              })
+            : items
+                .map((a) => {
+                  let pillClass = '';
+                  let pillText = 'Aktif';
+                  if (a.is_completed) {
+                    pillClass = 'ok';
+                    pillText = 'Selesai';
+                  } else {
+                    const dl = new Date(String(a.deadline).replace(' ', 'T'));
+                    const diffHours = (dl.getTime() - Date.now()) / (1000 * 60 * 60);
+                    if (diffHours < 0) {
+                      pillClass = 'hi';
+                      pillText = 'Terlewat';
+                    } else if (diffHours <= 24) {
+                      pillClass = 'hi';
+                      pillText = 'Mendesak';
                     } else {
-                      const dl = new Date(String(a.deadline).replace(' ', 'T'));
-                      const diffHours = (dl.getTime() - Date.now()) / (1000 * 60 * 60);
-                      if (diffHours < 0) {
-                        badgeHtml = '<span class="badge badge-danger">Terlewat</span>';
-                      } else if (diffHours <= 24) {
-                        badgeHtml = '<span class="badge badge-warning">Segera</span>';
-                      } else {
-                        badgeHtml = '<span class="badge badge-info">Aktif</span>';
+                      pillClass = 'ok';
+                      pillText = 'Baru';
+                    }
+                  }
+                  return `
+                    <div class="row">
+                      <div style="min-width: 0; flex: 1;">
+                        <b style="font-size: 14px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(a.description || a.subject)}</b>
+                        <small style="color: var(--text-muted); font-size: 12px;">${escapeHtml(a.subject)} · Tenggat: ${escapeHtml(a.deadline)}</small>
+                      </div>
+                      <span class="pill ${pillClass}">${pillText}</span>
+                      ${
+                        canWrite
+                          ? `
+                        <span class="acts">
+                          <button type="button" data-pr-toggle="${Number(a.id)}">${a.is_completed ? 'Buka' : 'Selesai'}</button>
+                          <button type="button" data-pr-edit="${Number(a.id)}">Edit</button>
+                          <button type="button" class="d" data-pr-delete="${Number(a.id)}">Hapus</button>
+                        </span>
+                      `
+                          : ''
                       }
-                    }
-                    return `
-                  <div class="assignment-card ${a.is_completed ? 'completed' : ''}">
-                    <div class="assignment-main">
-                      <div class="assignment-meta-top">
-                        ${badgeHtml}
-                        <span class="font-mono text-subtle" style="font-size: 0.76rem;">ID #${Number(a.id)}</span>
-                        <h3 class="assignment-subject">${escapeHtml(a.subject)}</h3>
-                      </div>
-                      <p class="assignment-desc">${escapeHtml(a.description)}</p>
-                      <div class="assignment-footer-meta">
-                        <span class="font-mono">Tenggat: <strong>${escapeHtml(a.deadline)}</strong></span>
-                        <span>Pembuat: ${escapeHtml(a.created_by)}</span>
-                      </div>
                     </div>
-                    ${
-                      canWrite
-                        ? `
-                      <div class="table-actions">
-                        <button type="button" class="btn ${a.is_completed ? 'btn-secondary' : 'btn-success-soft'} btn-xs" data-pr-toggle="${Number(a.id)}">
-                          ${a.is_completed ? 'Buka Kembali' : 'Tandai Selesai'}
-                        </button>
-                        <button type="button" class="btn btn-secondary btn-xs" data-pr-edit="${Number(a.id)}">
-                          Edit
-                        </button>
-                        <button type="button" class="btn btn-danger-soft btn-xs" data-pr-delete="${Number(a.id)}">
-                          Hapus
-                        </button>
-                      </div>
-                    `
-                        : ''
-                    }
-                  </div>
-                `;
-                  })
-                  .join('')}
-              </div>
-            `
-          }
-        </div>
-      </section>
-      ${canWrite ? `<button type="button" class="fab" id="fab-add-assignment" aria-label="Tambah Tugas" title="Tambah Tugas / PR">+</button>` : ''}
+                  `;
+                })
+                .join('')
+        }
+      </div>
+      ${canWrite ? `<button type="button" class="fab hide-desktop" id="fab-add-assignment" aria-label="Tambah Tugas">
+        <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        <span>Tugas</span>
+      </button>` : ''}
     `;
 
     document.getElementById('btn-add-assignment')?.addEventListener('click', () => openAssignmentFormModal(null));
@@ -4729,133 +4331,93 @@
     const className = state.currentUser?.class_name || 'Kelas Aktif';
 
     container.innerHTML = `
-      <div class="dashboard-split">
-        <section class="panel">
-          <div class="panel-header">
-            <div class="panel-title-group">
-              <h2 class="panel-title">Struktur Pengurus Kelas — ${escapeHtml(className)}</h2>
-              <p class="panel-subtitle">Jabatan Ketua, Sekretaris, dan Bendahara otomatis tersinkronisasi dengan otorisasi RBAC</p>
+      <div class="g2" style="margin-bottom: 16px;">
+        <div class="card">
+          <div class="ph">
+            <div>
+              <h2 style="font-size: 15px; margin: 0;">Struktur pengurus</h2>
+              <small style="color: var(--text-muted); font-size: 12px;">Dipilih dari Data Siswa — ${escapeHtml(className)}</small>
             </div>
             ${
               canWrite
-                ? `<button type="button" id="btn-add-position" class="btn btn-primary btn-sm hide-mobile">+ Atur Jabatan</button>`
+                ? `
+              <button type="button" id="btn-add-position" class="btn p" style="height: 32px; font-size: 12px;">
+                <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                <span>Atur jabatan</span>
+              </button>
+            `
                 : ''
             }
           </div>
-          <div class="panel-body ${state.structures.length > 0 ? 'no-pad' : ''}">
-            ${
-              state.structures.length === 0
-                ? renderEmptyState({
-                    title: 'Belum Ada Struktur Pengurus',
-                    description: 'Tambahkan jabatan Ketua, Wakil Ketua, Sekretaris, atau Bendahara untuk kelas ini.',
-                    actionLabel: canWrite ? '+ Tambah Jabatan Pengurus' : '',
-                    actionId: canWrite ? 'btn-empty-add-position' : ''
-                  })
-                : `
-                <!-- Daftar Pengurus Mobile (< 768px) -->
-                <div class="mobile-card-list">
-                  ${state.structures
-                    .map(
-                      (st) => `
-                    <div class="mobile-data-card">
-                      <div class="mobile-card-top">
-                        <span class="badge badge-info" style="font-size: 0.76rem;">${escapeHtml(st.position_name)}</span>
-                        <span class="font-mono text-subtle" style="font-size: 0.8rem;">${escapeHtml(formatPhoneDisplay(st.phone_number))}</span>
-                      </div>
-                      <div style="font-weight: 600; font-size: 0.98rem; color: var(--text);">${escapeHtml(st.holder_name)}</div>
-                      ${
-                        canWrite
-                          ? `
-                        <div class="mobile-card-actions">
-                          <button type="button" class="btn btn-secondary btn-xs" data-struct-edit="${Number(st.id)}">Ubah</button>
-                          <button type="button" class="btn btn-danger-soft btn-xs" data-struct-delete="${Number(st.id)}">Hapus</button>
+          ${
+            state.structures.length === 0
+              ? renderEmptyState({
+                  title: 'Belum Ada Struktur Pengurus',
+                  description: 'Tambahkan jabatan Ketua, Wakil Ketua, Sekretaris, atau Bendahara untuk kelas ini.',
+                  actionLabel: canWrite ? '+ Tambah Jabatan Pengurus' : '',
+                  actionId: canWrite ? 'btn-empty-add-position' : ''
+                })
+              : state.structures
+                  .map((st) => {
+                    const pos = st.position_name.toLowerCase();
+                    const pillClass = pos.includes('ketua') ? 'hi' : pos.includes('bendahara') ? 'ok' : '';
+                    return `
+                      <div class="row">
+                        <span class="pill ${pillClass}">${escapeHtml(st.position_name)}</span>
+                        <div style="min-width: 0; flex: 1;">
+                          <b style="font-size: 14px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(st.holder_name)}</b>
+                          <small class="mo" style="color: var(--text-muted); font-size: 12px;">${escapeHtml(formatPhoneDisplay(st.phone_number))}</small>
                         </div>
-                      `
-                          : ''
-                      }
-                    </div>
-                  `
-                    )
-                    .join('')}
-                </div>
-
-                <!-- Tabel Pengurus Desktop (>= 768px) -->
-                <div class="desktop-table-container table-responsive">
-                  <table class="data-table">
-                    <thead>
-                      <tr>
-                        <th>Jabatan</th>
-                        <th>Nama Pemegang Jabatan</th>
-                        <th>Nomor WhatsApp</th>
-                        ${canWrite ? '<th class="text-right">Aksi</th>' : ''}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${state.structures
-                        .map(
-                          (st) => `
-                        <tr>
-                          <td data-label="Jabatan"><span class="badge badge-info">${escapeHtml(st.position_name)}</span></td>
-                          <td data-label="Nama Pemegang Jabatan"><strong>${escapeHtml(st.holder_name)}</strong></td>
-                          <td class="font-mono" data-label="Nomor WhatsApp">${escapeHtml(formatPhoneDisplay(st.phone_number))}</td>
-                          ${
-                            canWrite
-                              ? `
-                            <td class="text-right" data-label="Aksi">
-                              <div class="table-actions">
-                                <button type="button" class="btn btn-secondary btn-xs" data-struct-edit="${Number(st.id)}">Ubah</button>
-                                <button type="button" class="btn btn-danger btn-xs" data-struct-delete="${Number(st.id)}">Hapus</button>
-                              </div>
-                            </td>
-                          `
-                              : ''
-                          }
-                        </tr>
-                      `
-                        )
-                        .join('')}
-                    </tbody>
-                  </table>
-                </div>
-              `
-            }
-          </div>
-        </section>
+                        ${
+                          canWrite
+                            ? `
+                          <div class="r acts">
+                            <button type="button" data-struct-edit="${Number(st.id)}">Ubah</button>
+                            <button type="button" class="d" data-struct-delete="${Number(st.id)}">Hapus</button>
+                          </div>
+                        `
+                            : ''
+                        }
+                      </div>
+                    `;
+                  })
+                  .join('')
+          }
+        </div>
 
         <!-- Panel Pratinjau Format Pengumuman Grup -->
-        <section class="panel">
-          <div class="panel-header">
-            <div class="panel-title-group">
-              <h2 class="panel-title">Pratinjau Format Pengumuman Grup</h2>
-              <p class="panel-subtitle">Target Kelas Aktif: <strong>${escapeHtml(className)}</strong></p>
+        <div class="card">
+          <div class="ph">
+            <div>
+              <h2 style="font-size: 15px; margin: 0;">Pengumuman</h2>
+              <small style="color: var(--text-muted); font-size: 12px;">Pratinjau pesan WhatsApp</small>
             </div>
+            <button type="button" id="btn-copy-announcement" class="btn" style="height: 32px; font-size: 12px;">
+              Salin
+            </button>
           </div>
-          <div class="panel-body" style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; flex-direction: column; gap: 12px;">
             <div class="form-group">
-              <label for="announcement-input" class="form-label">Isi Pesan Pengumuman</label>
+              <label for="announcement-input" class="form-label" style="font-size: 12px; color: var(--text-muted);">Isi Pesan Pengumuman</label>
               <textarea
                 id="announcement-input"
-                class="form-textarea"
+                class="form-textarea fld mo"
                 rows="3"
+                style="height: auto; padding: 10px 12px; font-size: 13px;"
                 placeholder="Ketik pesan pengumuman kelas untuk melihat pratinjau format..."
               >Besok seluruh siswa wajib hadir pukul 06.45 WIB untuk persiapan kegiatan kelas.</textarea>
             </div>
 
             <div class="form-group">
-              <span class="form-label">Pratinjau Pesan Siap Kirim</span>
-              <div id="announcement-preview-box" class="preview-terminal"></div>
-            </div>
-
-            <div class="panel-actions" style="justify-content: flex-end;">
-              <button type="button" id="btn-copy-announcement" class="btn btn-secondary btn-sm">
-                Salin Format Pengumuman
-              </button>
+              <span class="form-label" style="font-size: 12px; color: var(--text-muted);">Pratinjau Format</span>
+              <div id="announcement-preview-box" class="fld mo preview-terminal" style="height: auto; padding: 14px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; color: #cfd4e0;"></div>
             </div>
           </div>
-        </section>
+        </div>
+      </div>
 
-        <!-- Panel Multi-Group Linking -->
-        <section class="panel" style="grid-column: 1 / -1;">
+      <!-- Panel Multi-Group Linking -->
+      <section class="panel">
           <div class="panel-header">
             <div class="panel-title-group">
               <h2 class="panel-title">Grup WhatsApp Terhubung (Multi-Group Linking)</h2>
@@ -5023,44 +4585,58 @@
     });
   }
 
-  function openStructureFormModal(item = null) {
+  async function openStructureFormModal(item = null) {
     const isEdit = Boolean(item);
+    if (!state.students || state.students.length === 0) {
+      const sRes = await apiRequest('/api/students');
+      if (sRes.ok && sRes.data?.students) {
+        state.students = sRes.data.students;
+      }
+    }
+
+    const studentsList = state.students || [];
+    const positions = ['KETUA', 'WAKIL KETUA', 'SEKRETARIS', 'BENDAHARA', 'SIE ABSENSI', 'SIE KEBERSIHAN', 'SIE PERLENGKAPAN'];
+
     openModal({
       title: isEdit ? `Ubah Jabatan — ${item.position_name}` : 'Atur Jabatan Pengurus Kelas',
       bodyHtml: `
-        <form id="modal-structure-form" class="auth-form">
+        <form id="modal-structure-form" class="auth-form" onsubmit="return false;">
           <div class="form-group">
-            <label for="str-pos" class="form-label">Nama Jabatan</label>
+            <label for="str-pos-select" class="form-label">Pilih Jabatan</label>
+            <select id="str-pos-select" class="form-select fld" style="font-size: 14px; height: 44px; margin-bottom: 6px;">
+              ${positions.map((p) => `<option value="${p}" ${item?.position_name?.toUpperCase() === p ? 'selected' : ''}>${p}</option>`).join('')}
+              <option value="__custom__" ${item && !positions.includes(item.position_name?.toUpperCase()) ? 'selected' : ''}>Jabatan Lainnya (Ketik Manual)...</option>
+            </select>
             <input
               type="text"
               id="str-pos"
-              class="form-input"
-              placeholder="Contoh: KETUA / WAKIL KETUA / SEKRETARIS 1 / BENDAHARA 1"
-              required
-              value="${escapeHtml(item?.position_name || '')}"
+              class="form-input ${item && !positions.includes(item.position_name?.toUpperCase()) ? '' : 'hidden'}"
+              placeholder="Ketik nama jabatan khusus"
+              value="${escapeHtml(item?.position_name || 'KETUA')}"
             />
           </div>
+
           <div class="form-group">
-            <label for="str-holder" class="form-label">Nama Pemegang Jabatan</label>
-            <input
-              type="text"
-              id="str-holder"
-              class="form-input"
-              placeholder="Masukkan nama siswa pengurus"
-              required
-              value="${escapeHtml(item?.holder_name || '')}"
-            />
+            <label for="str-student-select" class="form-label">Pilih Siswa (Sumber Tunggal Data Siswa)</label>
+            <select id="str-student-select" class="form-select fld" style="font-size: 14px; height: 44px;">
+              <option value="">-- Pilih Siswa dari Data Kelas --</option>
+              ${studentsList
+                .map((s) => {
+                  const isSelected = item && (item.holder_name === s.name || item.phone_number === s.phone_number);
+                  return `<option value="${s.id}" data-name="${escapeHtml(s.name)}" data-phone="${escapeHtml(s.phone_number || '')}" ${isSelected ? 'selected' : ''}>#${s.student_number} ${escapeHtml(s.name)} (${escapeHtml(s.nis || '-')})</option>`;
+                })
+                .join('')}
+            </select>
+            <input type="hidden" id="str-holder" value="${escapeHtml(item?.holder_name || '')}" />
+            <input type="hidden" id="str-phone" value="${escapeHtml(item?.phone_number || '')}" />
           </div>
-          <div class="form-group">
-            <label for="str-phone" class="form-label">Nomor WhatsApp Pengurus</label>
-            <input
-              type="tel"
-              id="str-phone"
-              class="form-input font-mono"
-              placeholder="081234567890"
-              value="${escapeHtml(formatPhoneDisplay(item?.phone_number) === '—' ? '' : formatPhoneDisplay(item?.phone_number))}"
-            />
-            <span class="form-hint">Nomor ini akan dapat melakukan registrasi akun dashboard sesuai jabatannya.</span>
+
+          <div id="str-warning" class="alert-banner" style="display: none; margin-top: 10px; font-size: 12px; color: var(--warning); border: 1px solid rgba(251, 191, 36, 0.3); background: rgba(251, 191, 36, 0.1); border-radius: 8px; padding: 10px;"></div>
+
+          <div class="form-group" style="margin-top: 10px;">
+            <span class="form-hint" style="font-size: 12px; color: var(--text-muted);">
+              Siswa terpilih akan otomatis disinkronkan nama dan nomor WhatsApp-nya untuk otorisasi login pengurus.
+            </span>
           </div>
         </form>
       `,
@@ -5069,11 +4645,65 @@
         <button type="button" id="btn-save-structure" class="btn btn-primary">Simpan Jabatan</button>
       `,
       onMount: () => {
+        const posSelect = document.getElementById('str-pos-select');
+        const posInput = document.getElementById('str-pos');
+        const stSelect = document.getElementById('str-student-select');
+        const hInput = document.getElementById('str-holder');
+        const pInput = document.getElementById('str-phone');
+        const warnBox = document.getElementById('str-warning');
+
+        posSelect?.addEventListener('change', () => {
+          if (posSelect.value === '__custom__') {
+            posInput?.classList.remove('hidden');
+            posInput.value = '';
+            posInput.focus();
+          } else {
+            posInput?.classList.add('hidden');
+            posInput.value = posSelect.value;
+          }
+        });
+
+        stSelect?.addEventListener('change', () => {
+          const opt = stSelect.selectedOptions[0];
+          if (!opt || !opt.value) {
+            hInput.value = '';
+            pInput.value = '';
+            warnBox.style.display = 'none';
+            return;
+          }
+          const sName = opt.getAttribute('data-name') || '';
+          const sPhone = opt.getAttribute('data-phone') || '';
+          hInput.value = sName;
+          pInput.value = sPhone;
+
+          // Cek apakah siswa sudah punya jabatan lain
+          const existing = state.structures.find((st) => st.holder_name === sName && (!item || st.id !== item.id));
+          if (existing) {
+            warnBox.textContent = `⚠️ Perhatian: ${sName} saat ini sudah memegang jabatan "${existing.position_name}". Menyimpan akan memindahkan jabatannya.`;
+            warnBox.style.display = 'block';
+          } else {
+            warnBox.style.display = 'none';
+          }
+        });
+
         document.getElementById('btn-save-structure')?.addEventListener('click', async () => {
+          const pos = (posSelect.value === '__custom__' ? posInput.value.trim() : posSelect.value) || '';
+          const name = hInput.value.trim();
+          const phone = pInput.value.trim();
+
+          if (!pos) {
+            showToast('Pilih atau masukkan nama jabatan.', 'error');
+            return;
+          }
+          if (!name) {
+            showToast('Pilih siswa pengurus dari Data Siswa.', 'error');
+            return;
+          }
+
           const payload = {
-            position_name: document.getElementById('str-pos')?.value.trim() || '',
-            holder_name: document.getElementById('str-holder')?.value.trim() || '',
-            phone_number: document.getElementById('str-phone')?.value.trim() || ''
+            position_name: pos,
+            holder_name: name,
+            phone_number: phone
           };
 
           const res = await apiRequest('/api/structure', { method: 'POST', body: payload });
@@ -5736,91 +5366,81 @@
 
     if (state.devTab === 'vps') {
       tabBodyHtml = `
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-header"><span class="stat-label">Sistem Operasi &amp; Host</span></div>
-            <div class="stat-value" style="font-size: 1.15rem;">${escapeHtml(m.platform || 'Linux')}</div>
-            <div class="stat-footer"><span class="font-mono">Host: ${escapeHtml(m.hostname || '-')}</span></div>
+        <div class="stats">
+          <div class="card st">
+            <small>RAM terpakai</small>
+            <div class="n">${Number(m.ram?.used_percent || 0)}%</div>
+            <div class="d">${Number(m.ram?.used_gb || 0)} GB / ${Number(m.ram?.total_gb || 0)} GB</div>
           </div>
 
-          <div class="stat-card">
-            <div class="stat-header"><span class="stat-label">Penggunaan RAM VPS</span></div>
-            <div class="stat-value font-mono">${Number(m.ram?.used_percent || 0)}%</div>
-            <div class="stat-footer">
-              <span>${Number(m.ram?.used_gb || 0)} GB / ${Number(m.ram?.total_gb || 0)} GB • RSS: ${Number(m.ram?.rss_mb || 0)} MB</span>
-            </div>
+          <div class="card st">
+            <small>Disk terpakai</small>
+            <div class="n">${m.disk ? `${m.disk.used_percent}%` : '—'}</div>
+            <div class="d">${m.disk ? `${m.disk.used_gb} GB / ${m.disk.total_gb} GB` : 'Info disk tidak tersedia'}</div>
           </div>
 
-          <div class="stat-card">
-            <div class="stat-header"><span class="stat-label">Penyimpanan Disk (/)</span></div>
-            <div class="stat-value font-mono">${m.disk ? `${m.disk.used_percent}%` : '—'}</div>
-            <div class="stat-footer">
-              <span>${m.disk ? `${m.disk.used_gb} GB terpakai dari ${m.disk.total_gb} GB` : 'Info disk tidak tersedia'}</span>
-            </div>
+          <div class="card st">
+            <small>Uptime</small>
+            <div class="n">${formatDuration(m.uptime?.vps_seconds)}</div>
+            <div class="d">Web: ${formatDuration(m.uptime?.process_seconds)}</div>
           </div>
 
-          <div class="stat-card">
-            <div class="stat-header"><span class="stat-label">Prosesor &amp; Uptime</span></div>
-            <div class="stat-value" style="font-size: 1.1rem;">${Number(m.cpu_cores || 1)} Core CPU</div>
-            <div class="stat-footer">
-              <span>VPS: ${formatDuration(m.uptime?.vps_seconds)} • Web: ${formatDuration(m.uptime?.process_seconds)}</span>
-            </div>
+          <div class="card st hi">
+            <small>Status</small>
+            <div class="n" style="font-size: 20px;">Online</div>
+            <div class="d">${Number(m.cpu_cores || 1)} Core CPU • Linux</div>
           </div>
         </div>
 
-        <section class="panel" style="margin-top: 16px;">
-          <div class="panel-header">
-            <div class="panel-title-group">
-              <h2 class="panel-title">Statistik Tabel Database SQLite Otoritatif</h2>
-              <p class="panel-subtitle">Jumlah baris nyata pada database produksi saat ini</p>
-            </div>
+        <div class="card" style="padding: 0; overflow: hidden; margin-top: 14px;">
+          <div style="padding: 16px 18px; border-bottom: 1px solid var(--border);">
+            <h2 style="font-size: 15px; margin: 0;">Statistik Tabel Database SQLite Otoritatif</h2>
+            <small style="color: var(--text-muted); font-size: 12px;">Jumlah baris nyata pada database produksi saat ini</small>
           </div>
-          <div class="panel-body no-pad">
-            <div class="table-responsive">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Nama Tabel</th>
-                    <th>Keterangan Modul</th>
-                    <th class="text-right">Jumlah Rekaman</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td class="font-mono">classes</td>
-                    <td>Grup Kelas Terdaftar</td>
-                    <td class="text-right font-mono"><strong>${Number(dbCounts.classes || 0)}</strong></td>
-                  </tr>
-                  <tr>
-                    <td class="font-mono">students</td>
-                    <td>Total Master Siswa Lintas Kelas</td>
-                    <td class="text-right font-mono"><strong>${Number(dbCounts.students || 0)}</strong></td>
-                  </tr>
-                  <tr>
-                    <td class="font-mono">schedules</td>
-                    <td>Slot Jadwal Blok KBM Mingguan</td>
-                    <td class="text-right font-mono"><strong>${Number(dbCounts.schedules || 0)}</strong></td>
-                  </tr>
-                  <tr>
-                    <td class="font-mono">assignments</td>
-                    <td>Rekaman Tugas &amp; PR</td>
-                    <td class="text-right font-mono"><strong>${Number(dbCounts.assignments || 0)}</strong></td>
-                  </tr>
-                  <tr>
-                    <td class="font-mono">cash_payments</td>
-                    <td>Entri Pembayaran Kas Mingguan</td>
-                    <td class="text-right font-mono"><strong>${Number(dbCounts.cash_payments || 0)}</strong></td>
-                  </tr>
-                  <tr>
-                    <td class="font-mono">web_users / web_sessions</td>
-                    <td>Akun Dashboard Terdaftar / Sesi Aktif</td>
-                    <td class="text-right font-mono"><strong>${Number(dbCounts.web_users || 0)} akun / ${Number(dbCounts.active_sessions || 0)} sesi</strong></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          <div class="tw" style="border: 0; border-radius: 0;">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th style="width: 240px;">Nama Tabel</th>
+                  <th>Keterangan Modul</th>
+                  <th style="text-align: right; width: 140px;">Jumlah</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="mo">classes</td>
+                  <td>Grup Kelas Terdaftar</td>
+                  <td class="mo" style="text-align: right;"><b>${Number(dbCounts.classes || 0)}</b></td>
+                </tr>
+                <tr>
+                  <td class="mo">students</td>
+                  <td>Total Master Siswa Lintas Kelas</td>
+                  <td class="mo" style="text-align: right;"><b>${Number(dbCounts.students || 0)}</b></td>
+                </tr>
+                <tr>
+                  <td class="mo">schedules</td>
+                  <td>Slot Jadwal Blok KBM Mingguan</td>
+                  <td class="mo" style="text-align: right;"><b>${Number(dbCounts.schedules || 0)}</b></td>
+                </tr>
+                <tr>
+                  <td class="mo">assignments</td>
+                  <td>Rekaman Tugas &amp; PR</td>
+                  <td class="mo" style="text-align: right;"><b>${Number(dbCounts.assignments || 0)}</b></td>
+                </tr>
+                <tr>
+                  <td class="mo">cash_payments</td>
+                  <td>Entri Pembayaran Kas Mingguan</td>
+                  <td class="mo" style="text-align: right;"><b>${Number(dbCounts.cash_payments || 0)}</b></td>
+                </tr>
+                <tr>
+                  <td class="mo">web_users / web_sessions</td>
+                  <td>Akun Dashboard Terdaftar / Sesi Aktif</td>
+                  <td class="mo" style="text-align: right;"><b>${Number(dbCounts.web_users || 0)} / ${Number(dbCounts.active_sessions || 0)}</b></td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        </section>
+        </div>
       `;
     } else if (state.devTab === 'ping') {
       tabBodyHtml = `
@@ -6057,39 +5677,35 @@
     }
 
     container.innerHTML = `
-      <div class="toolbar">
-        <div class="toolbar-group">
-          <div class="subtabs" role="tablist">
-            <button
-              type="button"
-              class="subtab-btn ${state.devTab === 'vps' ? 'active' : ''}"
-              data-dev-tab="vps"
-            >
-              Status Layanan &amp; VPS
-            </button>
-            <button
-              type="button"
-              class="subtab-btn ${state.devTab === 'sticker' ? 'active' : ''}"
-              data-dev-tab="sticker"
-            >
-              Limit Stiker Grup
-            </button>
-            <button
-              type="button"
-              class="subtab-btn ${state.devTab === 'ping' ? 'active' : ''}"
-              data-dev-tab="ping"
-            >
-              Output /ping Kastor AI
-            </button>
-            <button
-              type="button"
-              class="subtab-btn ${state.devTab === 'audit' ? 'active' : ''}"
-              data-dev-tab="audit"
-            >
-              Audit Log Aktivitas
-            </button>
-          </div>
-        </div>
+      <div class="chips" style="margin-bottom: 14px;">
+        <button
+          type="button"
+          class="subtab-btn ${state.devTab === 'vps' ? 'on active' : ''}"
+          data-dev-tab="vps"
+        >
+          Status Layanan &amp; VPS
+        </button>
+        <button
+          type="button"
+          class="subtab-btn ${state.devTab === 'sticker' ? 'on active' : ''}"
+          data-dev-tab="sticker"
+        >
+          Limit Stiker Grup
+        </button>
+        <button
+          type="button"
+          class="subtab-btn ${state.devTab === 'ping' ? 'on active' : ''}"
+          data-dev-tab="ping"
+        >
+          Output /ping
+        </button>
+        <button
+          type="button"
+          class="subtab-btn ${state.devTab === 'audit' ? 'on active' : ''}"
+          data-dev-tab="audit"
+        >
+          Audit Log Aktivitas
+        </button>
       </div>
       ${tabBodyHtml}
     `;
@@ -6197,6 +5813,24 @@
         showToast('Memasuki Mode Demo Sandbox terisolasi.', 'info');
       }
     });
+
+    // Real-time Role Detector on Login Form
+    const loginPhoneInput = document.getElementById('login-phone');
+    const roleDetEl = document.getElementById('login-role-detector');
+    if (loginPhoneInput && roleDetEl) {
+      loginPhoneInput.addEventListener('input', () => {
+        const digits = loginPhoneInput.value.replace(/\D/g, '');
+        if (digits.length >= 10) {
+          if (digits.endsWith('5054456') || digits.includes('5155054456')) {
+            roleDetEl.textContent = 'Terdeteksi sebagai Developer (Rasyid)';
+          } else {
+            roleDetEl.textContent = 'Nomor siap diverifikasi untuk masuk';
+          }
+        } else {
+          roleDetEl.textContent = '';
+        }
+      });
+    }
 
     // Live Password Strength & Confirmation Match Feedback
     const regPasswordInput = document.getElementById('reg-password');

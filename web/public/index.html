@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="description" content="Kastor AI — Dashboard Administrasi Kelas &amp; Sistem Manajemen Akademik" />
-  <meta name="theme-color" content="#090D16" />
-  <title>Kastor AI — Dashboard Administrasi Kelas</title>
+  <meta name="theme-color" content="#0b0d12" />
+  <title>Kastor AI · v2</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
-  <style>html,body{background-color:#090D16!important;background-image:none!important;color:#F8FAFC;margin:0;padding:0;font-family:'Inter',system-ui,sans-serif;}#app,#app-shell,.app-shell,#auth-view,.auth-view{background-color:#090D16!important;background-image:none!important;}.hidden,[hidden],#app-shell.hidden,.app-shell.hidden,#auth-view.hidden,.auth-view.hidden{display:none!important;}</style>
-  <link rel="stylesheet" href="/styles.css?v=50" />
+  <style>html,body{background-color:#0b0d12!important;background-image:none!important;color:#eef0f5;margin:0;padding:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;}#app,#app-shell,.app-shell{background-color:#0b0d12!important;background-image:none!important;}#auth-view,.auth-view{background:radial-gradient(800px 400px at 50% -10%,rgba(229,72,77,.22),transparent 60%),#0b0d12!important;}.hidden,[hidden],#app-shell.hidden,.app-shell.hidden,#auth-view.hidden,.auth-view.hidden{display:none!important;}</style>
+  <link rel="stylesheet" href="/styles.css?v=51" />
 </head>
 <body>
   <!-- Notifikasi Toast Non-intrusif (Success / Error / Info) -->
@@ -19,31 +19,24 @@
   <!-- =========================================================
        VIEW 1: AUTHENTICATION (LOGIN & REGISTRASI PENGURUS)
        ========================================================= -->
-  <div id="auth-view" class="auth-view hidden">
+  <div id="auth-view" class="auth-view login hidden">
     <div class="auth-backdrop" style="display: none !important;"></div>
-    <main class="auth-card" role="main" aria-labelledby="auth-brand-title">
-      <div class="auth-header">
-        <div class="brand-mark">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-            <polyline points="2 17 12 22 22 17"></polyline>
-            <polyline points="2 12 12 17 22 12"></polyline>
-          </svg>
-        </div>
-        <div class="brand-text">
-          <div class="brand-badge-row">
-            <span class="version-pill">Kastor AI</span>
-            <span class="dot-sep">•</span>
-            <span class="brand-subtitle">Portal Pengurus</span>
+    <main class="auth-card lc" role="main" aria-labelledby="auth-brand-title">
+      <div class="auth-header" style="text-align: left; padding: 0 0 16px;">
+        <div class="logo" style="padding: 0 0 12px;">
+          <div class="m">K</div>
+          <div>
+            <b>Kastor AI</b>
+            <small style="color: var(--text-muted); font-size: 11px;">Portal Pengurus</small>
           </div>
-          <h1 id="auth-brand-title" class="auth-title">Portal Administrasi Kelas</h1>
-          <p class="auth-desc">Akses terpusat untuk Pengurus Kelas &amp; Developer dengan otorisasi berbasis peran (RBAC).</p>
         </div>
+        <h1 id="auth-brand-title" class="auth-title" style="font-size: 22px; margin: 8px 0 4px; letter-spacing: -0.02em;">Portal Administrasi Kelas</h1>
+        <p class="auth-desc" style="margin: 0 0 16px; color: var(--text-muted); font-size: 13px;">Akses terpusat untuk Pengurus Kelas &amp; Developer dengan otorisasi berbasis peran (RBAC).</p>
       </div>
 
       <!-- Tab Switcher: Masuk vs Registrasi Pengurus -->
-      <div class="auth-tabs" role="tablist" aria-label="Pilih mode autentikasi">
-        <button type="button" id="tab-btn-login" class="auth-tab active" role="tab" aria-selected="true" aria-controls="form-login">
+      <div class="auth-tabs seg" role="tablist" aria-label="Pilih mode autentikasi">
+        <button type="button" id="tab-btn-login" class="auth-tab active on" role="tab" aria-selected="true" aria-controls="form-login">
           Masuk Akun
         </button>
         <button type="button" id="tab-btn-register" class="auth-tab" role="tab" aria-selected="false" aria-controls="form-register">
@@ -69,6 +62,7 @@
               autocomplete="username"
             />
           </div>
+          <div id="login-role-detector" class="sm" style="margin-top: 6px; min-height: 18px; color: var(--accent); font-size: 12px;"></div>
         </div>
 
         <div class="form-group">
@@ -217,38 +211,33 @@
     <!-- Sidebar Kiri (248px Tetap di Desktop >= 1024px) -->
     <aside id="app-sidebar" class="app-sidebar" aria-label="Menu utama aplikasi">
       <div class="sidebar-top">
-        <div class="sidebar-brand">
-          <div class="brand-logo-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-              <polyline points="2 17 12 22 22 17"></polyline>
-              <polyline points="2 12 12 17 22 12"></polyline>
-            </svg>
+        <button type="button" id="btn-close-sidebar" class="xb dx hide-desktop" aria-label="Tutup menu navigasi">
+          <svg class="i" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="logo">
+          <div class="m">K</div>
+          <div>
+            <b>Kastor AI</b>
+            <small style="color: var(--text-muted); font-size: 11px;">Classroom OS</small>
           </div>
-          <div class="sidebar-brand-meta">
-            <span class="sidebar-brand-title">Kastor AI</span>
-            <span class="sidebar-brand-ver">Classroom Management OS</span>
-          </div>
-          <button type="button" id="btn-close-sidebar" class="btn-close-drawer hide-desktop" aria-label="Tutup menu navigasi">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
         </div>
 
         <!-- Konteks Kelas Aktif & Class Switcher (Khusus Developer) -->
-        <div class="class-context-panel">
-          <div class="context-label-row">
-            <span class="context-caption">KONTEKS KELAS AKTIF</span>
-            <span id="sidebar-context-lock" class="context-lock-tag">Terkunci</span>
+        <div class="cls dd" id="class-context-panel" style="cursor: pointer; display: block;">
+          <div class="context-label-row" style="display: flex; justify-content: space-between; align-items: center;">
+            <small style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;">Kelas</small>
+            <span id="sidebar-context-lock" class="context-lock-tag" style="font-size: 10px; color: var(--text-muted);">Terkunci</span>
           </div>
           <!-- Tampilan untuk Non-Developer (Read-only Class Context) -->
-          <div id="class-static-display" class="class-static-box">
-            <span id="sidebar-class-name" class="class-static-name">—</span>
-            <span id="sidebar-class-groupid" class="class-static-id font-mono"></span>
+          <div id="class-static-display" style="font-weight: 600; margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">
+            <span id="sidebar-class-name">—</span>
+            <span id="sidebar-class-groupid" class="class-static-id font-mono" style="display: none;"></span>
+            <span style="color: var(--text-muted); font-size: 12px;">▾</span>
           </div>
           <!-- Tampilan Dropdown Switcher khusus DEVELOPER -->
-          <div id="class-switcher-container" class="class-switcher-box hidden">
+          <div id="class-switcher-container" class="class-switcher-box hidden" style="margin-top: 6px;">
             <label for="developer-class-select" class="sr-only">Pilih Kelas Aktif</label>
-            <select id="developer-class-select" class="form-select class-select">
+            <select id="developer-class-select" class="form-select class-select" style="width: 100%; height: 36px; font-size: 13px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 0 8px;">
               <option value="">Memuat daftar kelas...</option>
             </select>
           </div>
@@ -256,30 +245,25 @@
       </div>
 
       <!-- Menu Navigasi Utama Desktop -->
-      <nav class="sidebar-nav" aria-label="Daftar modul">
-        <div class="nav-section-label">MODUL ADMINISTRASI</div>
-        <ul id="sidebar-nav-list" class="nav-list">
+      <nav class="sidebar-nav nav" aria-label="Daftar modul">
+        <div class="lbl nav-section-label" style="color: var(--text-muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 14px 12px 8px;">Administrasi</div>
+        <ul id="sidebar-nav-list" class="nav-list" style="list-style: none; padding: 0; margin: 0;">
           <!-- Dirender secara dinamis sesuai otorisasi Role di app.js -->
         </ul>
       </nav>
 
       <!-- Footer Akun Pengguna & Tombol Keluar (Desktop) -->
-      <div class="sidebar-footer">
-        <div class="user-card">
-          <div class="user-avatar" id="sidebar-user-avatar">U</div>
-          <div class="user-details">
-            <div class="user-name-row">
-              <span id="sidebar-user-name" class="user-name">Pengurus</span>
-            </div>
-            <span id="sidebar-user-phone" class="user-phone font-mono">-</span>
-            <div class="user-role-row">
-              <span id="sidebar-user-role" class="role-badge">ROLE</span>
-            </div>
+      <div class="me sidebar-footer" style="margin-top: auto; padding: 12px; border-top: 1px solid var(--border); display: flex; gap: 10px; align-items: center;">
+        <div class="av user-avatar" id="sidebar-user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); display: grid; place-items: center; font-weight: 700;">U</div>
+        <div class="user-details" style="flex: 1; min-width: 0;">
+          <div class="user-name-row">
+            <b id="sidebar-user-name" class="user-name" style="display: block; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Pengurus</b>
           </div>
+          <small id="sidebar-user-role" class="mo role-badge" style="color: var(--text-muted); font-size: 11px;">ROLE</small>
+          <span id="sidebar-user-phone" class="user-phone font-mono" style="display: none;">-</span>
         </div>
-        <button type="button" id="btn-logout" class="btn btn-secondary btn-block btn-logout">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          <span>Keluar Sesi</span>
+        <button type="button" id="btn-logout" class="btn g btn-logout" title="Keluar Sesi" aria-label="Keluar Sesi" style="color: var(--text-muted); border: 0; background: none; padding: 6px; cursor: pointer;">
+          <svg class="i" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
         </button>
       </div>
     </aside>
@@ -287,27 +271,32 @@
     <!-- Area Konten Utama -->
     <div class="main-wrapper">
       <!-- Header Halaman Desktop & Ringkasan Konteks (>= 1024px) -->
-      <header class="page-topbar">
-        <div class="page-heading-group">
-          <div class="page-breadcrumb">
-            <span>Kastor AI</span>
-            <span class="breadcrumb-sep">/</span>
-            <span id="topbar-module-label">Dashboard</span>
+      <header class="top page-topbar">
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <button type="button" id="btn-mobile-menu" class="btn g mnav hide-desktop" aria-label="Menu" style="border: 0; background: none; color: var(--text-muted); padding: 4px; display: none;">
+            <svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <div class="page-heading-group">
+            <small style="color: var(--text-muted); font-size: 12px;">Kastor AI / <span id="topbar-module-label">Dashboard</span></small>
+            <h1 id="desktop-page-title" class="page-title" style="font-size: 18px; margin: 0; letter-spacing: -0.01em;">Ringkasan Kelas</h1>
           </div>
-          <h1 id="desktop-page-title" class="page-title">Ringkasan Kelas</h1>
         </div>
 
-        <div class="topbar-meta-actions">
+        <div class="topbar-meta-actions" style="display: flex; gap: 10px; align-items: center;">
           <div id="topbar-class-btn" class="context-pill-group" style="display: none !important;" aria-hidden="true">
             <strong id="topbar-class-badge" class="context-pill-value">—</strong>
+          </div>
+          <div class="search hide-mobile" style="display: flex; align-items: center; gap: 8px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; height: 38px; width: 280px; color: var(--text-muted);">
+            <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+            <input type="search" id="global-search-input" placeholder="Cari siswa, tugas, atau NIS" style="background: none; border: 0; outline: 0; color: var(--text); width: 100%; font: inherit; font-size: 13px;">
           </div>
           <div class="topbar-user-pill">
             <span id="topbar-role-badge" class="role-badge">ROLE</span>
             <span id="topbar-phone-label" class="topbar-phone"></span>
           </div>
-          <button type="button" id="btn-refresh-page" class="btn btn-secondary btn-sm" title="Muat ulang data halaman ini">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-            <span class="hide-sm">Segarkan</span>
+          <button type="button" id="btn-refresh-page" class="btn g" title="Muat ulang data halaman ini" aria-label="Segarkan" style="border: 0; background: none; color: var(--text-muted); padding: 6px; cursor: pointer;">
+            <svg class="i" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+            <span class="hide-sm" style="display: none;">Segarkan</span>
           </button>
         </div>
       </header>
