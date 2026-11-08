@@ -45,6 +45,12 @@ coverage/
 /tmp/kastor_*
 .playwright-mcp/
 
+# Generated Screenshots & Mobile Captures
+assets/*full.png
+assets/*mobile*
+assets/screenshots/
+*.png.tmp
+
 # IDE & Editor Settings (Optional local user files)
 .vscode/*
 !.vscode/settings.json
