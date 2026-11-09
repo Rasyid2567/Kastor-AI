@@ -302,7 +302,42 @@
     }
 
     if (pathname.startsWith('/api/classes/linked-groups')) {
-      return mockResponse({ ok: true, linked_groups: [] });
+      if (method === 'GET') {
+        return mockResponse({ ok: true, linked_groups: store.linked_groups || [] });
+      }
+      if (method === 'POST') {
+        const bodyObj = body || {};
+        const newGroup = {
+          id: Date.now(),
+          parent_group_id: store.active_group_id,
+          group_id: bodyObj.group_id || '120363404071833104@g.us',
+          group_label: bodyObj.group_label || 'Cabang',
+          created_at: new Date().toISOString().replace('T', ' ').slice(0, 19)
+        };
+        store.linked_groups = store.linked_groups || [];
+        store.linked_groups.push(newGroup);
+        saveDemoStore(store);
+        return mockResponse({ ok: true, message: 'Grup WhatsApp berhasil ditautkan!', linked_group: newGroup });
+      }
+      if (method === 'PUT' || method === 'PATCH') {
+        const idMatch = pathname.match(/\/api\/classes\/linked-groups\/(\d+)/);
+        const id = idMatch ? Number(idMatch[1]) : Number(body.id);
+        const group = (store.linked_groups || []).find((g) => g.id === id);
+        if (group) {
+          if (body.group_label !== undefined) group.group_label = body.group_label;
+          saveDemoStore(store);
+          return mockResponse({ ok: true, message: 'Penanda grup berhasil diubah!', linked_group: group });
+        }
+        return mockResponse({ ok: false, error: 'Grup tidak ditemukan.' }, 404);
+      }
+      if (method === 'DELETE') {
+        const idMatch = pathname.match(/\/api\/classes\/linked-groups\/(\d+)/);
+        const id = idMatch ? Number(idMatch[1]) : Number(body.id);
+        store.linked_groups = (store.linked_groups || []).filter((g) => g.id !== id);
+        saveDemoStore(store);
+        return mockResponse({ ok: true, message: 'Tautan grup berhasil diputuskan!' });
+      }
+      return mockResponse({ ok: true, linked_groups: store.linked_groups || [] });
     }
 
     // 3. DASHBOARD STATS
@@ -567,7 +602,29 @@
     // 7. STRUKTUR ORGANISASI (CRUD)
     if (pathname === '/api/structure') {
       if (method === 'GET') {
-        return mockResponse({ ok: true, count: store.structure.length, structure: store.structure });
+        const cls = store.classes[0] || {};
+        return mockResponse({
+          ok: true,
+          count: (store.structure || []).length,
+          structures: store.structure || [],
+          structure: store.structure || [],
+          class_roles: (store.structure || []).map((s, idx) => ({
+            id: idx + 1,
+            group_id: DEMO_GROUP_ID,
+            phone_number: s.phone_number,
+            role: s.position_name.toUpperCase().includes('KETUA') ? 'KETUA' :
+                  s.position_name.toUpperCase().includes('WAKIL') ? 'WAKIL' :
+                  s.position_name.toUpperCase().includes('SEKRETARIS') ? 'SEKRETARIS' :
+                  s.position_name.toUpperCase().includes('BENDAHARA') ? 'BENDAHARA' : 'ANGGOTA'
+          })),
+          linked_groups: store.linked_groups || [],
+          class_info: {
+            group_id: cls.group_id || DEMO_GROUP_ID,
+            class_name: cls.class_name || 'XI Sains Digital (Demo)',
+            academic_year: cls.academic_year || '2026/2027',
+            semester_start_date: cls.semester_start_date || '2026-07-13'
+          }
+        });
       }
 
       if (method === 'POST') {
@@ -807,6 +864,35 @@
 
     // 10. SYSTEM & DEV-CONSOLE
     if (pathname === '/api/system/status' && method === 'GET') {
+      const demoDbCounts = {
+        classes: (store.classes || []).length,
+        students: (store.students || []).length,
+        schedules: (store.schedules || []).length,
+        assignments: (store.assignments || []).length,
+        cash_payments: (store.cash_payments || []).length,
+        web_users: 1,
+        active_sessions: 1
+      };
+
+      const demoStatusText = [
+        '⚡ KASTOR AI SYSTEM STATUS (SANDBOX MODE)',
+        '========================================',
+        'Status Server   : ONLINE (Browser Simulation)',
+        'Platform        : Client-Side Sandbox (localStorage)',
+        'Uptime VPS      : 2 hari 0 jam 12 menit',
+        'Uptime Web      : 1 jam 15 menit',
+        'RAM Terpakai    : 2.40 GB / 8.00 GB (30.0%)',
+        'Disk Terpakai   : 14.50 GB / 50.00 GB (29.0%)',
+        'CPU             : 2 Core Virtual Cloud vCPU • Linux',
+        'Database        : SQLite In-Memory Mock (Browser LocalStorage)',
+        'Total Kelas     : ' + demoDbCounts.classes + ' grup kelas',
+        'Total Siswa     : ' + demoDbCounts.students + ' siswa terdaftar',
+        'Total Jadwal    : ' + demoDbCounts.schedules + ' slot pelajaran',
+        'Total Tugas     : ' + demoDbCounts.assignments + ' rekaman tugas',
+        'Total Kas Masuk : ' + demoDbCounts.cash_payments + ' rekaman pembayaran',
+        'Catatan         : Seluruh modul berjalan mandiri tanpa menyentuh server database.'
+      ].join('\n');
+
       return mockResponse({
         ok: true,
         online: true,
@@ -815,11 +901,38 @@
         platform: 'Client Browser Sandbox (Web API)',
         memory_usage: '42.8 MB',
         node_version: 'v22.5.0-sandbox',
+        metrics: {
+          hostname: 'kastor-sandbox-vps',
+          platform: 'Linux 6.8.0-cloud (Demo Sandbox)',
+          cpu_model: 'Virtual Cloud vCPU (Demo Sandbox)',
+          cpu_cores: 2,
+          cpu_speed_mhz: 2400,
+          load_avg: [0.12, 0.08, 0.05],
+          ram: {
+            total_gb: 8.00,
+            used_gb: 2.40,
+            free_gb: 5.60,
+            used_percent: 30.0,
+            rss_mb: 42.8
+          },
+          disk: {
+            total_gb: 50.00,
+            used_gb: 14.50,
+            avail_gb: 35.50,
+            used_percent: 29.0
+          },
+          uptime: {
+            vps_seconds: 173520,
+            process_seconds: 4500
+          },
+          db_counts: demoDbCounts
+        },
         services: {
           database: 'SQLite In-Memory (localStorage Mock)',
           whatsapp_baileys: 'Simulated (Standby)',
           ai_gateway: 'Simulated (Ready)'
-        }
+        },
+        status_text: demoStatusText
       });
     }
 
@@ -975,4 +1088,5 @@
     resetStore: resetDemoStore,
     saveStore: saveDemoStore
   };
+  window.DemoSandbox = window.KastorDemoSandbox;
 })();

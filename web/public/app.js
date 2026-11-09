@@ -1506,14 +1506,24 @@
       appShell.style.display = '';
     }
 
-    if (state.activeModule === 'cash' && !canViewCash()) {
-      state.activeModule = 'dashboard';
+    const hash = (window.location.hash || '').replace(/^#/, '').trim();
+    const validModuleIds = NAV_ITEMS.map((n) => n.id);
+    let targetModule = state.activeModule || 'dashboard';
+    if (hash && validModuleIds.includes(hash)) {
+      targetModule = hash;
     }
+    if (targetModule === 'cash' && !canViewCash()) {
+      targetModule = 'dashboard';
+    }
+    if (targetModule === 'dev-console' && !isDeveloper()) {
+      targetModule = 'dashboard';
+    }
+    state.activeModule = targetModule;
 
     renderUserAndClassContext();
     updateNavVisibility();
     await loadClassesForContext();
-    await navigateToModule(state.activeModule || 'dashboard');
+    await navigateToModule(targetModule);
     requestAnimationFrame(() => updateBottomNavSlidingPill({ instant: true }));
   }
 
@@ -1735,6 +1745,9 @@
     }
 
     state.activeModule = moduleId;
+    if (window.location.hash !== '#' + moduleId) {
+      history.replaceState(null, '', '#' + moduleId);
+    }
     closeMobileDrawer();
     closeMoreSheet();
     updateActiveNavState(moduleId);
@@ -5475,8 +5488,8 @@
 
         <div class="card" style="padding: 0; overflow: hidden; margin-top: 14px;">
           <div style="padding: 16px 18px; border-bottom: 1px solid var(--border);">
-            <h2 style="font-size: 15px; margin: 0;">Statistik Tabel Database SQLite Otoritatif</h2>
-            <small style="color: var(--text-muted); font-size: 12px;">Jumlah baris nyata pada database produksi saat ini</small>
+            <h2 style="font-size: 15px; margin: 0;">${(window.KastorDemoSandbox?.isActive?.() || window.DemoSandbox?.isActive?.()) ? 'Statistik Database Sandbox (Mode Demo)' : 'Statistik Tabel Database SQLite Otoritatif'}</h2>
+            <small style="color: var(--text-muted); font-size: 12px;">${(window.KastorDemoSandbox?.isActive?.() || window.DemoSandbox?.isActive?.()) ? 'Jumlah rekaman data simulasi di browser (localStorage) saat ini' : 'Jumlah baris nyata pada database produksi saat ini'}</small>
           </div>
           <div class="tw" style="border: 0; border-radius: 0;">
             <table class="tbl">
@@ -6315,6 +6328,15 @@
         updateBottomNavSlidingPill({ instant: true });
       });
     }, { passive: true });
+
+    // Sinkronisasi Route Hash URL (#dashboard, #dev-console, dll)
+    window.addEventListener('hashchange', () => {
+      const hash = (window.location.hash || '').replace(/^#/, '').trim();
+      const validModuleIds = NAV_ITEMS.map((n) => n.id);
+      if (hash && validModuleIds.includes(hash) && hash !== state.activeModule) {
+        navigateToModule(hash);
+      }
+    });
   }
 
   // Initialize on DOMContentLoaded
