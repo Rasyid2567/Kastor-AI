@@ -61,3 +61,4 @@ assets/screenshots/
 
 # Local AI Agent internal artifacts / scratch
 .agents/
+*.zip

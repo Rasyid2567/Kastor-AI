@@ -18,16 +18,16 @@
    */
   function generateDefaultDemoStore() {
     const defaultStudents = [
-      { id: 1, group_id: DEMO_GROUP_ID, name: 'Ahmad Fauzi', phone_number: '081290001001', gender: 'L' },
-      { id: 2, group_id: DEMO_GROUP_ID, name: 'Budi Santoso', phone_number: '081290001002', gender: 'L' },
-      { id: 3, group_id: DEMO_GROUP_ID, name: 'Citra Lestari', phone_number: '081290001003', gender: 'P' },
-      { id: 4, group_id: DEMO_GROUP_ID, name: 'Dimas Pratama', phone_number: '081290001004', gender: 'L' },
-      { id: 5, group_id: DEMO_GROUP_ID, name: 'Eka Rahmawati', phone_number: '081290001005', gender: 'P' },
-      { id: 6, group_id: DEMO_GROUP_ID, name: 'Farhan Syahputra', phone_number: '081290001006', gender: 'L' },
-      { id: 7, group_id: DEMO_GROUP_ID, name: 'Gita Permata', phone_number: '081290001007', gender: 'P' },
-      { id: 8, group_id: DEMO_GROUP_ID, name: 'Hendra Gunawan', phone_number: '081290001008', gender: 'L' },
-      { id: 9, group_id: DEMO_GROUP_ID, name: 'Intan Nuraini', phone_number: '081290001009', gender: 'P' },
-      { id: 10, group_id: DEMO_GROUP_ID, name: 'Joko Wahyudi', phone_number: '081290001010', gender: 'L' }
+      { id: 1, group_id: DEMO_GROUP_ID, student_number: 1, name: 'Ahmad Fauzi', phone_number: '081290001001', gender: 'L' },
+      { id: 2, group_id: DEMO_GROUP_ID, student_number: 2, name: 'Budi Santoso', phone_number: '081290001002', gender: 'L' },
+      { id: 3, group_id: DEMO_GROUP_ID, student_number: 3, name: 'Citra Lestari', phone_number: '081290001003', gender: 'P' },
+      { id: 4, group_id: DEMO_GROUP_ID, student_number: 4, name: 'Dimas Pratama', phone_number: '081290001004', gender: 'L' },
+      { id: 5, group_id: DEMO_GROUP_ID, student_number: 5, name: 'Eka Rahmawati', phone_number: '081290001005', gender: 'P' },
+      { id: 6, group_id: DEMO_GROUP_ID, student_number: 6, name: 'Farhan Syahputra', phone_number: '081290001006', gender: 'L' },
+      { id: 7, group_id: DEMO_GROUP_ID, student_number: 7, name: 'Gita Permata', phone_number: '081290001007', gender: 'P' },
+      { id: 8, group_id: DEMO_GROUP_ID, student_number: 8, name: 'Hendra Gunawan', phone_number: '081290001008', gender: 'L' },
+      { id: 9, group_id: DEMO_GROUP_ID, student_number: 9, name: 'Intan Nuraini', phone_number: '081290001009', gender: 'P' },
+      { id: 10, group_id: DEMO_GROUP_ID, student_number: 10, name: 'Joko Wahyudi', phone_number: '081290001010', gender: 'L' }
     ];
 
     const defaultStructure = [
@@ -39,23 +39,23 @@
     ];
 
     const defaultSchedules = [
-      { id: 1, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 1, subject: 'Matematika Terapan', teacher: 'Pak Hendro, S.Pd', room: 'R-101', time_start: '07:00', time_end: '09:15' },
-      { id: 2, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 1, subject: 'Pemrograman Web & Perangkat Bergerak', teacher: 'Bu Maya, M.Kom', room: 'Lab Komputer 1', time_start: '09:30', time_end: '12:00' },
-      { id: 3, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 1, subject: 'Bahasa Indonesia', teacher: 'Bu Sri Rahayu', room: 'R-101', time_start: '13:00', time_end: '15:30' },
+      { id: 1, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 1, block_type: 'TEORI', subject: 'Matematika Terapan', subject_name: 'Matematika Terapan', teacher: 'Pak Hendro, S.Pd', teacher_name: 'Pak Hendro, S.Pd', room: 'R-101', room_name: 'R-101', time_start: '07:00', time_end: '09:15' },
+      { id: 2, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 1, block_type: 'BENGKEL', subject: 'Pemrograman Web & Perangkat Bergerak', subject_name: 'Pemrograman Web & Perangkat Bergerak', teacher: 'Bu Maya, M.Kom', teacher_name: 'Bu Maya, M.Kom', room: 'Lab Komputer 1', room_name: 'Lab Komputer 1', time_start: '09:30', time_end: '12:00' },
+      { id: 3, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 1, block_type: 'TEORI', subject: 'Bahasa Indonesia', subject_name: 'Bahasa Indonesia', teacher: 'Bu Sri Rahayu', teacher_name: 'Bu Sri Rahayu', room: 'R-101', room_name: 'R-101', time_start: '13:00', time_end: '15:30' },
 
-      { id: 4, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 2, subject: 'Basis Data & SQL Relasional', teacher: 'Pak Dodi Prabowo', room: 'Lab Komputer 2', time_start: '07:00', time_end: '11:30' },
-      { id: 5, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 2, subject: 'Pemrograman Berorientasi Objek', teacher: 'Bu Maya, M.Kom', room: 'Lab Komputer 1', time_start: '12:30', time_end: '15:30' },
+      { id: 4, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 2, block_type: 'BENGKEL', subject: 'Basis Data & SQL Relasional', subject_name: 'Basis Data & SQL Relasional', teacher: 'Pak Dodi Prabowo', teacher_name: 'Pak Dodi Prabowo', room: 'Lab Komputer 2', room_name: 'Lab Komputer 2', time_start: '07:00', time_end: '11:30' },
+      { id: 5, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 2, block_type: 'BENGKEL', subject: 'Pemrograman Berorientasi Objek', subject_name: 'Pemrograman Berorientasi Objek', teacher: 'Bu Maya, M.Kom', teacher_name: 'Bu Maya, M.Kom', room: 'Lab Komputer 1', room_name: 'Lab Komputer 1', time_start: '12:30', time_end: '15:30' },
 
-      { id: 6, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 3, subject: 'Bahasa Inggris Teknis', teacher: 'Mr. Ryan Kusuma', room: 'R-101', time_start: '07:00', time_end: '09:30' },
-      { id: 7, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 3, subject: 'Pendidikan Pancasila', teacher: 'Pak Agus Salim', room: 'R-101', time_start: '09:45', time_end: '12:00' },
-      { id: 8, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 3, subject: 'Desain Grafis & UI/UX', teacher: 'Bu Ratna Dewi', room: 'Lab Desain', time_start: '13:00', time_end: '15:30' },
+      { id: 6, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 3, block_type: 'TEORI', subject: 'Bahasa Inggris Teknis', subject_name: 'Bahasa Inggris Teknis', teacher: 'Mr. Ryan Kusuma', teacher_name: 'Mr. Ryan Kusuma', room: 'R-101', room_name: 'R-101', time_start: '07:00', time_end: '09:30' },
+      { id: 7, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 3, block_type: 'TEORI', subject: 'Pendidikan Pancasila', subject_name: 'Pendidikan Pancasila', teacher: 'Pak Agus Salim', teacher_name: 'Pak Agus Salim', room: 'R-101', room_name: 'R-101', time_start: '09:45', time_end: '12:00' },
+      { id: 8, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 3, block_type: 'BENGKEL', subject: 'Desain Grafis & UI/UX', subject_name: 'Desain Grafis & UI/UX', teacher: 'Bu Ratna Dewi', teacher_name: 'Bu Ratna Dewi', room: 'Lab Desain', room_name: 'Lab Desain', time_start: '13:00', time_end: '15:30' },
 
-      { id: 9, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 4, subject: 'Proyek Kolaborasi Digital & Rekayasa', teacher: 'Tim Guru Pengampu', room: 'Lab Studio Digital', time_start: '07:00', time_end: '11:30' },
-      { id: 10, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 4, subject: 'Cloud & DevOps Fundamental', teacher: 'Pak Kevin Sanjaya', room: 'Lab Komputer 1', time_start: '12:30', time_end: '15:00' },
+      { id: 9, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 4, block_type: 'BENGKEL', subject: 'Proyek Kolaborasi Digital & Rekayasa', subject_name: 'Proyek Kolaborasi Digital & Rekayasa', teacher: 'Tim Guru Pengampu', teacher_name: 'Tim Guru Pengampu', room: 'Lab Studio Digital', room_name: 'Lab Studio Digital', time_start: '07:00', time_end: '11:30' },
+      { id: 10, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 4, block_type: 'BENGKEL', subject: 'Cloud & DevOps Fundamental', subject_name: 'Cloud & DevOps Fundamental', teacher: 'Pak Kevin Sanjaya', teacher_name: 'Pak Kevin Sanjaya', room: 'Lab Komputer 1', room_name: 'Lab Komputer 1', time_start: '12:30', time_end: '15:00' },
 
-      { id: 11, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 5, subject: 'Pendidikan Agama & Budi Pekerti', teacher: 'Ust. Nur Hidayat', room: 'Masjid Sekolah', time_start: '07:00', time_end: '09:00' },
-      { id: 12, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 5, subject: 'Pendidikan Jasmani & Olahraga', teacher: 'Pak Bambang S.', room: 'Lapangan Utama', time_start: '09:15', time_end: '11:15' },
-      { id: 13, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 5, subject: 'Bimbingan Konseling & Budaya Industri', teacher: 'Bu Dian Safitri', room: 'R-101', time_start: '13:00', time_end: '15:15' }
+      { id: 11, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 5, block_type: 'TEORI', subject: 'Pendidikan Agama & Budi Pekerti', subject_name: 'Pendidikan Agama & Budi Pekerti', teacher: 'Ust. Nur Hidayat', teacher_name: 'Ust. Nur Hidayat', room: 'Masjid Sekolah', room_name: 'Masjid Sekolah', time_start: '07:00', time_end: '09:00' },
+      { id: 12, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 5, block_type: 'TEORI', subject: 'Pendidikan Jasmani & Olahraga', subject_name: 'Pendidikan Jasmani & Olahraga', teacher: 'Pak Bambang S.', teacher_name: 'Pak Bambang S.', room: 'Lapangan Utama', room_name: 'Lapangan Utama', time_start: '09:15', time_end: '11:15' },
+      { id: 13, group_id: DEMO_GROUP_ID, week_number: 18, day_index: 5, block_type: 'TEORI', subject: 'Bimbingan Konseling & Budaya Industri', subject_name: 'Bimbingan Konseling & Budaya Industri', teacher: 'Bu Dian Safitri', teacher_name: 'Bu Dian Safitri', room: 'R-101', room_name: 'R-101', time_start: '13:00', time_end: '15:15' }
     ];
 
     const todayDate = new Date();
@@ -673,14 +673,19 @@
 
         return {
           student_id: st.id,
+          student_number: st.student_number || st.id,
+          name: st.name,
           student_name: st.name,
           phone_number: st.phone_number,
           gender: st.gender,
-          paid_weeks: paidWeeksMap,
-          paid_weeks_count: paidCount,
+          weeks: paidWeeksMap,
+          paid_weeks: paidCount,
+          unpaid_weeks: arrears,
+          arrears: arrearsAmount,
           arrears_count: arrears,
           arrears_amount: arrearsAmount,
-          is_lunas: arrears === 0
+          is_lunas: arrears === 0,
+          status_label: arrears === 0 ? '✅' : `-Rp${arrearsAmount.toLocaleString('id-ID')}`
         };
       });
 
@@ -690,6 +695,7 @@
         active_weeks_count: activeWeeks,
         holiday_weeks: Array.from(holidays),
         total_payable_weeks: totalPayableWeeks,
+        students: recap,
         recap
       });
     }

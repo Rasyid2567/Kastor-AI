@@ -122,14 +122,6 @@
       canShow: () => true
     },
     {
-      id: 'utilities',
-      label: 'AI & Utilitas',
-      sub: 'Utilitas',
-      title: 'AI & Utilitas',
-      icon: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
-      canShow: () => true
-    },
-    {
       id: 'dev-console',
       label: 'Developer Console',
       sub: 'Developer',
@@ -1048,13 +1040,6 @@
       canShow: () => canViewFinance()
     },
     {
-      id: 'utilities',
-      label: 'AI & Utilitas',
-      desc: 'Asisten AI & Kalkulator Ilmiah',
-      icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M16 14H8a4 4 0 0 0-4 4v2h16v-2a4 4 0 0 0-4-4z"/></svg>',
-      canShow: () => true
-    },
-    {
       id: 'dev-console',
       label: 'Developer Console',
       desc: 'Metrik VPS, Konsol & Audit Log',
@@ -1839,9 +1824,29 @@
       return;
     }
 
+    // Jadwal beranda diambil dari endpoint yang sama dengan halaman Jadwal Pelajaran
+    const schedRes = await apiRequest('/api/schedules');
+    const weekScheduleList = (schedRes.ok && Array.isArray(schedRes.data?.schedules))
+      ? schedRes.data.schedules
+      : (d.week_schedules || []);
     state.activeSchoolWeek = Number(cls.current_week || 1);
     const showCashCard = Boolean(d.cash_summary) && canViewCash();
-    const todaySchedules = d.today_schedules || [];
+
+    // Deduplikasi mata pelajaran rolling untuk minggu aktif (1 minggu langsung, konsisten dengan halaman Jadwal Pelajaran)
+    const uniqueWeekSchedules = [];
+    const seenSubjects = new Set();
+    for (const item of weekScheduleList) {
+      if (item.teacher_name === 'Guru Pendamping / Wali Kelas' || (item.subject_name || '').toLowerCase().includes('refleksi')) {
+        continue;
+      }
+      const normSubject = normalizeScheduleSubject(item.subject_name);
+      const key = `${normSubject.toLowerCase()}|${(item.teacher_name || '').trim().toLowerCase()}|${(item.room_name || '').trim().toLowerCase()}|${item.block_type}`;
+      if (!seenSubjects.has(key)) {
+        seenSubjects.add(key);
+        uniqueWeekSchedules.push({ ...item, subject_name: normSubject });
+      }
+    }
+    const todaySchedules = uniqueWeekSchedules.length > 0 ? uniqueWeekSchedules : weekScheduleList;
     const activeAssignments = d.active_assignments || [];
 
     const statsCardsHtml = `
@@ -1876,25 +1881,25 @@
       <div class="card">
         <div class="ph">
           <div>
-            <h2 style="font-size: 15px; margin: 0;">Jadwal hari ini</h2>
-            <small style="color: var(--text-muted); font-size: 12px;">${escapeHtml(DAY_NAMES[cls.day_index] || 'Hari Ini')}, minggu ke-${Number(cls.current_week || 1)}</small>
+            <h2 style="font-size: 15px; margin: 0;">Jadwal minggu ini</h2>
+            <small style="color: var(--text-muted); font-size: 12px;">Minggu ke-${Number(cls.current_week || 1)} · ${todaySchedules.length} mata pelajaran (sistem blok)</small>
           </div>
           <button type="button" class="btn" data-navigate="schedules" style="text-decoration: none; height: 32px; font-size: 12px;">Lihat semua</button>
         </div>
         ${
           todaySchedules.length === 0
-            ? '<div class="sm" style="text-align: center; padding: 24px; color: var(--text-muted);">Tidak ada jadwal KBM hari ini</div>'
+            ? '<div class="sm" style="text-align: center; padding: 24px; color: var(--text-muted);">Belum ada jadwal KBM minggu ini</div>'
             : todaySchedules
                 .map(
-                  (s) => `
+                  (s, idx) => `
                 <div class="row">
-                  <span class="mo" style="color: var(--accent); font-weight: 600; width: 70px; font-size: 12px;">${escapeHtml(s.time_start)}</span>
+                  <span class="mo" style="color: var(--accent); font-weight: 700; width: 36px; font-size: 13px;">#${idx + 1}</span>
                   <div style="min-width: 0; flex: 1;">
-                    <b style="display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(s.subject_name)}</b>
-                    <small style="color: var(--text-muted); font-size: 12px;">${escapeHtml(s.room_name || 'Ruang')} · ${escapeHtml(s.teacher_name || '-')}</small>
+                    <b style="display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(s.subject_name || s.subject || '-')}</b>
+                    <small style="color: var(--text-muted); font-size: 12px;">${escapeHtml(s.teacher_name || s.teacher || '-')} · ${escapeHtml(s.room_name || s.room || 'Ruang')}</small>
                   </div>
                   <div class="r">
-                    <span class="pill ${s.block_type === 'BENGKEL' ? 'wn' : 'ok'}">${escapeHtml(s.block_type || 'Teori')}</span>
+                    <span class="pill ${s.block_type === 'BENGKEL' ? 'wn' : 'ok'}">${escapeHtml(s.block_type || 'TEORI')}</span>
                   </div>
                 </div>
               `
@@ -2033,7 +2038,7 @@
                   .map(
                     (s) => `
                   <tr>
-                    <td class="mo" style="color: var(--text-muted);">#${Number(s.student_number)}</td>
+                    <td class="mo" style="color: var(--text-muted);">${(Number.isFinite(Number(s.student_number)) && Number(s.student_number) > 0) ? '#' + Number(s.student_number) : '—'}</td>
                     <td>
                       <b>${escapeHtml(s.name)}</b>
                       ${s.address ? `<small>${escapeHtml(s.address)}</small>` : ''}
@@ -2072,7 +2077,7 @@
                     <b>${escapeHtml(s.name)}</b>
                     <small>${escapeHtml(s.address || s.nis || 'Siswa Kelas')}</small>
                   </div>
-                  <span class="pill mo">#${Number(s.student_number)}</span>
+                  <span class="pill mo">${(Number.isFinite(Number(s.student_number)) && Number(s.student_number) > 0) ? '#' + Number(s.student_number) : '—'}</span>
                 </div>
                 <div class="f">
                   <span class="mo">${escapeHtml(formatPhoneDisplay(s.phone_number))}</span>
@@ -2497,8 +2502,8 @@
           <button type="button" id="btn-week-prev" class="btn" ${currentWeek <= 1 ? 'disabled' : ''} title="Minggu Lalu">
             ← Minggu Lalu
           </button>
-          <button type="button" id="btn-week-current" class="btn ${currentWeek === state.activeSchoolWeek ? 'p' : ''}" title="Minggu Ini">
-            Minggu Ini (Minggu ${state.activeSchoolWeek})
+          <button type="button" id="btn-week-current" class="btn ${currentWeek === state.activeSchoolWeek ? 'p' : ''}" title="Kembali ke minggu ini">
+            Minggu ${currentWeek}
           </button>
           <button type="button" id="btn-week-next" class="btn" ${currentWeek >= 20 ? 'disabled' : ''} title="Minggu Depan">
             Minggu Depan →
@@ -2554,13 +2559,13 @@
                     <div class="mc">
                       <div class="t">
                         <div>
-                          <b>${escapeHtml(item.subject_name)}</b>
-                          <small>${escapeHtml(item.teacher_name)}</small>
+                          <b>${escapeHtml(item.subject_name || item.subject || '-')}</b>
+                          <small>${escapeHtml(item.teacher_name || item.teacher || '-')}</small>
                         </div>
-                        <span class="pill ${item.block_type === 'BENGKEL' ? 'wn' : 'ok'}">${escapeHtml(item.block_type)}</span>
+                        <span class="pill ${item.block_type === 'BENGKEL' ? 'wn' : 'ok'}">${escapeHtml(item.block_type || 'TEORI')}</span>
                       </div>
                       <div class="f">
-                        <span>${escapeHtml(item.room_name)}</span>
+                        <span>${escapeHtml(item.room_name || item.room || '-')}</span>
                         ${
                           canWrite
                             ? `
@@ -2599,12 +2604,12 @@
                           <td class="mo" style="color: var(--text-muted);">${idx + 1}</td>
                           <td>
                             <span class="pill ${item.block_type === 'BENGKEL' ? 'wn' : 'ok'}">
-                              ${escapeHtml(item.block_type)}
+                              ${escapeHtml(item.block_type || 'TEORI')}
                             </span>
                           </td>
-                          <td><b style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(item.subject_name)}">${escapeHtml(item.subject_name)}</b></td>
-                          <td><div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(item.teacher_name)}">${escapeHtml(item.teacher_name)}</div></td>
-                          <td><span class="pill">${escapeHtml(item.room_name)}</span></td>
+                          <td><b style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(item.subject_name || item.subject || '')}">${escapeHtml(item.subject_name || item.subject || '-')}</b></td>
+                          <td><div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(item.teacher_name || item.teacher || '')}">${escapeHtml(item.teacher_name || item.teacher || '-')}</div></td>
+                          <td><span class="pill">${escapeHtml(item.room_name || item.room || '-')}</span></td>
                           ${
                             canWrite
                               ? `
@@ -2872,7 +2877,7 @@
     state.cashTreasurers = settingsRes.data.treasurers || [];
     state.cashTreasurerNames = settingsRes.data.treasurer_names || [];
     state.cashActiveSchoolWeek = settingsRes.data.active_school_week || state.activeSchoolWeek || 2;
-    state.cashRecap = recapRes.data.students || [];
+    state.cashRecap = recapRes.data.students || recapRes.data.recap || [];
     state.cashFormattedText = recapRes.data.formatted_text || '';
 
     const hasWeek1 = state.cashRecap.some((s) => s.weeks && s.weeks[1]);
@@ -2975,8 +2980,8 @@
 
         <div class="card st hi">
           <small>Minggu ${currentCashWeek} · lunas</small>
-          <div class="n">${paidStudentsCount}<span style="font-size: 14px; opacity: .8;"> / ${totalStudents}</span></div>
-          <div class="d">${paidPercent}% siswa sudah bayar</div>
+          <div class="n" id="cash-stat-paid-count">${paidStudentsCount}<span style="font-size: 14px; opacity: .8;"> / ${totalStudents}</span></div>
+          <div class="d" id="cash-stat-paid-pct">${paidPercent}% siswa sudah bayar</div>
         </div>
 
         <div class="card st">
@@ -2989,7 +2994,7 @@
       <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
         <div style="display: flex; gap: 8px; align-items: center;">
           <button type="button" class="btn" id="btn-cash-prev-week" ${currentCashWeek <= startCashWeek ? 'disabled' : ''}>←</button>
-          <div class="card" style="padding: 8px 14px; font-weight: 700;">Minggu ${currentCashWeek}</div>
+          <button type="button" id="btn-cash-current-week" class="btn ${currentCashWeek === state.cashActiveSchoolWeek ? 'p' : ''}" title="Kembali ke minggu ini" style="font-weight: 700;">Minggu ${currentCashWeek}</button>
           <button type="button" class="btn" id="btn-cash-next-week" ${currentCashWeek >= endCashWeek ? 'disabled' : ''}>→</button>
           ${renderCustomSelectHtml({
             id: 'cash-week-select',
@@ -3013,7 +3018,7 @@
               </button>
               <button type="button" class="btn hide-desktop" id="btn-toggle-cash-holiday-mobile" data-week="${currentCashWeek}" style="display: none;" aria-hidden="true"></button>
             </span>
-            <button type="button" class="btn" id="btn-toggle-cash-settings" title="Pengaturan Kas">⚙️</button>
+            <button type="button" class="btn" id="btn-toggle-cash-settings" title="Pengaturan Kas"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
           `
               : ''
           }
@@ -3061,21 +3066,22 @@
                 const ckBtn = `
                   <button
                     type="button"
-                    class="ck ${paid ? 'on' : ''} cash-week-btn"
-                    ${isEditable ? `data-toggle-cash="${Number(st.student_id)}:${currentCashWeek}:${paid ? 0 : 1}"` : 'disabled'}
+                    class="ck ${paid ? 'on paid' : 'unpaid'} cash-week-btn"
+                    ${isEditable ? `data-toggle-cash="${Number(st.student_id)}:${currentCashWeek}:${paid ? 0 : 1}"` : 'data-cash-readonly="true" disabled'}
                     aria-label="${paid ? 'Batal tandai lunas' : 'Tandai lunas'}"
+                    title="${isEditable ? (paid ? 'Batal tandai lunas' : 'Tandai lunas') : 'Hanya Bendahara atau Developer yang dapat menandai kas'}"
                   >
                     ${paid ? '<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px;stroke-width:3;color:#052e1f"><path d="M5 12l5 5 9-10"/></svg>' : ''}
                   </button>
                 `;
                 return `
-                  <div class="mc" style="border-left: 4px solid ${isCurrentWeekHoliday ? 'var(--text-muted)' : paid ? 'var(--accent)' : 'var(--danger)'};">
+                  <div class="mc" data-cash-mc="${Number(st.student_id)}" style="border-left: 4px solid ${isCurrentWeekHoliday ? 'var(--text-muted)' : Number(st.arrears) === 0 ? 'var(--ok)' : 'var(--danger)'};">
                     <div class="t" style="align-items: center;">
                       <div style="min-width: 0;">
                         <b>${escapeHtml(st.name)}</b>
                         <small style="display: block;">Absen #${Number(st.student_number)} · Minggu ${currentCashWeek}</small>
-                        <small style="display: block; font-weight: 700; margin-top: 4px; color: ${paid ? 'var(--accent)' : 'var(--danger)'};">
-                          ${paid ? 'Lunas' : `Kurang ${formatRupiah(st.total_tunggakan || fee)}`}
+                        <small data-cash-subtext="${Number(st.student_id)}" style="display: block; font-weight: 700; margin-top: 4px; color: ${Number(st.arrears) === 0 ? 'var(--ok)' : 'var(--danger)'};">
+                          ${Number(st.arrears) === 0 ? 'Lunas' : `Kurang ${formatRupiah(st.arrears ?? st.total_tunggakan ?? fee)}`}
                         </small>
                       </div>
                       <div>
@@ -3105,9 +3111,10 @@
                     const ckBtn = `
                       <button
                         type="button"
-                        class="ck ${paid ? 'on' : ''} cash-week-btn"
-                        ${isEditable ? `data-toggle-cash="${Number(st.student_id)}:${currentCashWeek}:${paid ? 0 : 1}"` : 'disabled'}
+                        class="ck ${paid ? 'on paid' : 'unpaid'} cash-week-btn"
+                        ${isEditable ? `data-toggle-cash="${Number(st.student_id)}:${currentCashWeek}:${paid ? 0 : 1}"` : 'data-cash-readonly="true" disabled'}
                         aria-label="${paid ? 'Batal tandai lunas' : 'Tandai lunas'}"
+                        title="${isEditable ? (paid ? 'Batal tandai lunas' : 'Tandai lunas') : 'Hanya Bendahara atau Developer yang dapat menandai kas'}"
                       >
                         ${paid ? '<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px;stroke-width:3;color:#052e1f"><path d="M5 12l5 5 9-10"/></svg>' : ''}
                       </button>
@@ -3117,8 +3124,8 @@
                         <td class="mo" style="color: var(--text-muted);">#${Number(st.student_number)}</td>
                         <td>
                           <b>${escapeHtml(st.name)}</b>
-                          <small style="display: block; color: ${paid ? 'var(--text-muted)' : 'var(--danger)'};">
-                            ${paid ? 'Lunas minggu ini' : `Kurang ${formatRupiah(st.total_tunggakan || fee)}`}
+                          <small data-cash-subtext-dt="${Number(st.student_id)}" style="display: block; color: ${Number(st.arrears) === 0 ? 'var(--ok)' : 'var(--danger)'};">
+                            ${Number(st.arrears) === 0 ? 'Lunas' : `Kurang ${formatRupiah(st.arrears ?? st.total_tunggakan ?? fee)}`}
                           </small>
                         </td>
                         <td style="text-align: right;">
@@ -3187,6 +3194,13 @@
     document.getElementById('btn-cash-prev-week')?.addEventListener('click', () => {
       if (currentCashWeek > startCashWeek) {
         state.cashWeek = currentCashWeek - 1;
+        renderCashView(container);
+      }
+    });
+
+    document.getElementById('btn-cash-current-week')?.addEventListener('click', () => {
+      if (state.cashActiveSchoolWeek && currentCashWeek !== state.cashActiveSchoolWeek) {
+        state.cashWeek = state.cashActiveSchoolWeek;
         renderCashView(container);
       }
     });
@@ -3303,28 +3317,71 @@
           : `<span class="badge badge-warning">${escapeHtml(studentObj.status_label)}</span>`;
       });
 
-      // Perbarui progress bar di ringkasan mobile jika ada
+      // Perbarui subtext kartu mobile
+      const subtextEls = document.querySelectorAll(`[data-cash-subtext="${Number(studentId)}"]`);
+      subtextEls.forEach((el) => {
+        el.textContent = arrearsNominal === 0 ? 'Lunas' : `Kurang ${formatRupiah(arrearsNominal || fee)}`;
+        el.style.color = arrearsNominal === 0 ? 'var(--ok)' : 'var(--danger)';
+      });
+
+      // Perbarui border kartu mobile
+      const mcEls = document.querySelectorAll(`[data-cash-mc="${Number(studentId)}"]`);
+      mcEls.forEach((el) => {
+        el.style.borderLeftColor = arrearsNominal === 0 ? 'var(--ok)' : 'var(--danger)';
+      });
+
+      // Perbarui subtext tabel desktop
+      const subtextDtEls = document.querySelectorAll(`[data-cash-subtext-dt="${Number(studentId)}"]`);
+      subtextDtEls.forEach((el) => {
+        el.textContent = arrearsNominal === 0 ? 'Lunas' : `Kurang ${formatRupiah(arrearsNominal || fee)}`;
+        el.style.color = arrearsNominal === 0 ? 'var(--ok)' : 'var(--danger)';
+      });
+
+      // Perbarui ringkasan statistik lunas di kartu atas
       const totalStudents = state.cashRecap.length;
-      const paidStudentsCount = state.cashRecap.filter((s) => s.is_lunas).length;
-      const paidPercent = totalStudents > 0 ? Math.round((paidStudentsCount / totalStudents) * 100) : 0;
+      const currentWeekNumber = Number(state.cashWeek || state.cashActiveSchoolWeek || startWeek);
+      const paidThisWeekCount = state.cashRecap.filter((s) => s.weeks && s.weeks[currentWeekNumber]).length;
+      const paidThisWeekPct = totalStudents > 0 ? Math.round((paidThisWeekCount / totalStudents) * 100) : 0;
+
+      const statCountEl = document.getElementById('cash-stat-paid-count');
+      if (statCountEl) {
+        statCountEl.innerHTML = `${paidThisWeekCount}<span style="font-size: 14px; opacity: .8;"> / ${totalStudents}</span>`;
+      }
+      const statPctEl = document.getElementById('cash-stat-paid-pct');
+      if (statPctEl) {
+        statPctEl.textContent = `${paidThisWeekPct}% siswa sudah bayar`;
+      }
+
+      // Perbarui progress bar di ringkasan mobile jika ada
+      const paidAllStudentsCount = state.cashRecap.filter((s) => s.is_lunas).length;
+      const paidAllPercent = totalStudents > 0 ? Math.round((paidAllStudentsCount / totalStudents) * 100) : 0;
       const progressFill = document.querySelector('.cash-progress-fill');
-      if (progressFill) progressFill.style.width = `${paidPercent}%`;
+      if (progressFill) progressFill.style.width = `${paidAllPercent}%`;
       const progressLabels = document.querySelector('.cash-progress-labels');
       if (progressLabels) {
-        progressLabels.innerHTML = `<span><strong>${paidStudentsCount}</strong> dari ${totalStudents} siswa lunas</span><span class="font-mono">${paidPercent}%</span>`;
+        progressLabels.innerHTML = `<span><strong>${paidAllStudentsCount}</strong> dari ${totalStudents} siswa lunas</span><span class="font-mono">${paidAllPercent}%</span>`;
       }
     }
 
     // 3. Perbarui seluruh tombol/chip minggu yang cocok (desktop dan mobile)
     const matchingBtns = document.querySelectorAll(`[data-toggle-cash^="${Number(studentId)}:${Number(weekNumber)}:"]`);
     const isHol = holidayWeeksSet.has(Number(weekNumber));
+    const checkSvg = '<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px;stroke-width:3;color:#052e1f"><path d="M5 12l5 5 9-10"/></svg>';
+
     matchingBtns.forEach((btn) => {
+      btn.classList.toggle('on', Boolean(isPaid));
       btn.classList.toggle('paid', Boolean(isPaid));
       btn.classList.toggle('unpaid', !isPaid && !isHol);
       btn.classList.toggle('holiday', !isPaid && isHol);
       btn.setAttribute('data-toggle-cash', `${Number(studentId)}:${Number(weekNumber)}:${isPaid ? 0 : 1}`);
+      btn.setAttribute('aria-label', isPaid ? 'Batal tandai lunas' : 'Tandai lunas');
       btn.setAttribute('title', isPaid ? (isHol ? `Minggu ${weekNumber}: Lunas (Dibayar di Minggu Libur)` : `Minggu ${weekNumber}: Lunas`) : (isHol ? `Minggu ${weekNumber}: Libur Kas (Bebas Tagihan)` : `Minggu ${weekNumber}: Belum Lunas`));
-      btn.textContent = isPaid ? '✓' : '—';
+
+      if (btn.classList.contains('ck')) {
+        btn.innerHTML = isPaid ? checkSvg : '';
+      } else {
+        btn.textContent = isPaid ? '✓' : '—';
+      }
     });
   }
 
@@ -5916,6 +5973,40 @@
       navigateToModule(state.activeModule);
     });
 
+    // Global Topbar Search Input
+    document.getElementById('global-search-input')?.addEventListener('input', (e) => {
+      const q = e.target.value;
+      if (state.activeModule === 'students') {
+        const input = document.getElementById('student-search-input');
+        if (input) {
+          input.value = q;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      } else if (state.activeModule === 'cash') {
+        const input = document.getElementById('cash-search-input');
+        if (input) {
+          input.value = q;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      } else if (state.activeModule === 'schedules') {
+        const input = document.getElementById('schedule-teacher-input');
+        if (input) {
+          input.value = q;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+    });
+
+    document.getElementById('global-search-input')?.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        const q = e.target.value.trim();
+        if (state.activeModule !== 'students' && state.activeModule !== 'cash' && state.activeModule !== 'schedules') {
+          state.studentSearch = q;
+          await navigateToModule('students');
+        }
+      }
+    });
+
     // Mobile Topbar Refresh Button
     document.getElementById('btn-mobile-refresh')?.addEventListener('click', async () => {
       const btn = document.getElementById('btn-mobile-refresh');
@@ -6048,9 +6139,14 @@
     // Delegated Click Handler for Dynamic Content
     document.addEventListener('click', async (e) => {
       const target = e.target.closest(
-        '[data-navigate], [data-close-modal], [data-action], [data-student-detail], [data-student-edit], [data-student-delete], [data-schedule-edit], [data-schedule-delete], [data-toggle-cash], [data-cash-view-all], [data-pr-filter], [data-pr-toggle], [data-pr-edit], [data-pr-delete], [data-struct-edit], [data-struct-delete], [data-dev-tab]'
+        '[data-navigate], [data-close-modal], [data-action], [data-student-detail], [data-student-edit], [data-student-delete], [data-schedule-edit], [data-schedule-delete], [data-toggle-cash], [data-cash-readonly], [data-cash-view-all], [data-pr-filter], [data-pr-toggle], [data-pr-edit], [data-pr-delete], [data-struct-edit], [data-struct-delete], [data-dev-tab]'
       );
       if (!target) return;
+
+      if (target.hasAttribute('data-cash-readonly')) {
+        showToast('Hanya Bendahara atau Developer yang memiliki izin menandai kas.', 'warning');
+        return;
+      }
 
       if (target.hasAttribute('data-close-modal')) {
         closeModal();

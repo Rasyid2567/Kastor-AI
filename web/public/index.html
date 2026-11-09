@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
   <style>html,body{background-color:#0b0d12!important;background-image:none!important;color:#eef0f5;margin:0;padding:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;}#app,#app-shell,.app-shell{background-color:#0b0d12!important;background-image:none!important;}#auth-view,.auth-view{background:radial-gradient(800px 400px at 50% -10%,rgba(229,72,77,.22),transparent 60%),#0b0d12!important;}.hidden,[hidden],#app-shell.hidden,.app-shell.hidden,#auth-view.hidden,.auth-view.hidden{display:none!important;}</style>
-  <link rel="stylesheet" href="/styles.css?v=51" />
+  <link rel="stylesheet" href="/styles-v3.css?v=51" />
 </head>
 <body>
   <!-- Notifikasi Toast Non-intrusif (Success / Error / Info) -->
@@ -27,15 +27,15 @@
           <div class="m">K</div>
           <div>
             <b>Kastor AI</b>
-            <small style="color: var(--text-muted); font-size: 11px;">Portal Pengurus</small>
+            <small style="color: var(--text-muted); font-size: 11px;">Portal Administrasi Kelas</small>
           </div>
         </div>
-        <h1 id="auth-brand-title" class="auth-title" style="font-size: 22px; margin: 8px 0 4px; letter-spacing: -0.02em;">Portal Administrasi Kelas</h1>
-        <p class="auth-desc" style="margin: 0 0 16px; color: var(--text-muted); font-size: 13px;">Akses terpusat untuk Pengurus Kelas &amp; Developer dengan otorisasi berbasis peran (RBAC).</p>
+        <h1 id="auth-brand-title" class="auth-title" style="font-size: 22px; margin: 8px 0 4px; letter-spacing: -0.02em;">Selamat datang</h1>
+        <p id="auth-desc" class="auth-desc" style="margin: 0 0 16px; color: var(--text-muted); font-size: 13px;">Masuk untuk mengelola kelas Anda.</p>
       </div>
 
       <!-- Tab Switcher: Masuk vs Registrasi Pengurus -->
-      <div class="auth-tabs seg" role="tablist" aria-label="Pilih mode autentikasi">
+      <div class="auth-tabs seg hidden" role="tablist" aria-label="Pilih mode autentikasi">
         <button type="button" id="tab-btn-login" class="auth-tab active on" role="tab" aria-selected="true" aria-controls="form-login">
           Masuk Akun
         </button>
@@ -50,14 +50,14 @@
       <!-- FORM MASUK (/api/auth/login) -->
       <form id="form-login" class="auth-form" autocomplete="on" novalidate>
         <div class="form-group">
-          <label for="login-phone" class="form-label">Nomor WhatsApp Terdaftar</label>
+          <label for="login-phone" class="form-label">Nomor WhatsApp</label>
           <div class="input-wrapper">
             <input
               type="tel"
               id="login-phone"
               name="phone_number"
               class="form-input font-mono"
-              placeholder="081234567890 atau 6281234567890"
+              placeholder="08xxxxxxxxxx"
               required
               autocomplete="username"
             />
@@ -66,14 +66,14 @@
         </div>
 
         <div class="form-group">
-          <label for="login-password" class="form-label">Kata Sandi</label>
+          <label for="login-password" class="form-label">Kata sandi</label>
           <div class="input-wrapper password-wrapper">
             <input
               type="password"
               id="login-password"
               name="password"
               class="form-input"
-              placeholder="Masukkan kata sandi Anda"
+              placeholder="Kata sandi kamu"
               required
               autocomplete="current-password"
             />
@@ -84,7 +84,7 @@
         </div>
 
         <button type="submit" id="btn-submit-login" class="btn btn-primary btn-block">
-          <span>Masuk ke Dashboard</span>
+          <span>Masuk ke dashboard</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
 
@@ -98,6 +98,7 @@
             <span>Coba Mode Demo Sandbox</span>
           </button>
         </div>
+      <p class="auth-switch">Belum punya akun? <a href="#" onclick="document.getElementById(&#39;auth-brand-title&#39;).textContent=&#39;Daftar pengurus&#39;;document.getElementById(&#39;auth-desc&#39;).textContent=&#39;Buat akun untuk mengelola kelas Anda.&#39;;document.getElementById(&#39;tab-btn-register&#39;).click();return false;">Daftar sekarang</a></p>
       </form>
 
       <!-- FORM REGISTRASI PENGURUS (/api/auth/register) - TANPA PILIHAN ROLE -->
@@ -109,7 +110,7 @@
             id="reg-phone"
             name="phone_number"
             class="form-input font-mono"
-            placeholder="081234567890 atau 6281234567890"
+            placeholder="08xxxxxxxxxx"
             required
           />
         </div>
@@ -172,6 +173,7 @@
           <span>Verifikasi &amp; Daftarkan Akun</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         </button>
+            <p class="auth-switch">Sudah punya akun? <a href="#" onclick="document.getElementById(&#39;auth-brand-title&#39;).textContent=&#39;Selamat datang&#39;;document.getElementById(&#39;auth-desc&#39;).textContent=&#39;Masuk untuk mengelola kelas Anda.&#39;;document.getElementById(&#39;tab-btn-login&#39;).click();return false;">Masuk</a></p>
       </form>
 
       <footer class="auth-footer">
@@ -200,7 +202,6 @@
 
     <!-- Hidden compatibility elements for app.js & test assertions -->
     <div style="display: none !important;" aria-hidden="true">
-      <button type="button" id="btn-mobile-menu" tabindex="-1"></button>
       <button type="button" id="btn-mobile-refresh" tabindex="-1"></button>
       <span id="mobile-role-badge"></span>
     </div>
@@ -277,9 +278,6 @@
             <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
             <input type="search" id="global-search-input" placeholder="Cari siswa, tugas, atau NIS">
           </div>
-          <button type="button" id="btn-refresh-page" class="btn g" title="Notifikasi" aria-label="Notifikasi" style="border: 0; background: none; color: var(--mu); padding: 6px; cursor: pointer;">
-            <svg class="i" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-          </button>
           <!-- Hidden compatibility elements for tests -->
           <div style="display: none !important;" aria-hidden="true">
             <span id="topbar-role-badge"></span>
@@ -397,18 +395,6 @@
                 <svg class="sheet-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
             </li>
-            <li>
-              <button type="button" class="sheet-nav-item" data-navigate="utilities">
-                <span class="sheet-nav-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M16 14H8a4 4 0 0 0-4 4v2h16v-2a4 4 0 0 0-4-4z"/></svg>
-                </span>
-                <span class="sheet-nav-text">
-                  <strong>AI &amp; Utilitas</strong>
-                  <small>Asisten AI &amp; kalkulator ilmiah</small>
-                </span>
-                <svg class="sheet-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
-            </li>
             <li id="more-nav-dev-item" class="hidden">
               <button type="button" class="sheet-nav-item" data-navigate="dev-console">
                 <span class="sheet-nav-icon">
@@ -463,7 +449,7 @@
     </div>
   </div>
 
-  <script src="/demo-sandbox.js?v=50"></script>
-  <script src="/app.js?v=50"></script>
+  <script src="/demo-sandbox.js?v=52"></script>
+  <script src="/app.js?v=52"></script>
 </body>
 </html>

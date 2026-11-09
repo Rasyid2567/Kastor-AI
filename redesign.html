@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kastor AI · v2</title>
+<style>
+:root{--bg:#0b0d12;--s1:#12151c;--s2:#181c26;--line:#262c3a;--tx:#eef0f5;--mu:#8b93a7;--ac:#e5484d;--acs:rgba(229,72,77,.14);--ok:#3ecf8e;--wn:#f5b546;--r:16px}
+*{box-sizing:border-box;scrollbar-width:none;-ms-overflow-style:none}
+*::-webkit-scrollbar{display:none}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.mo{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--s2);font-weight:600;font-size:13px}
+.btn.p{background:var(--ac);border-color:var(--ac);color:#fff}
+.btn.g{border:0;background:none;color:var(--mu)}
+.shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+aside{background:var(--s1);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:18px 12px;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;padding:4px 8px 18px}
+.logo .m{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#e5484d,#f97316);display:grid;place-items:center;font-weight:800;color:#fff}
+.logo b{font-size:15px;display:block}.logo small{color:var(--mu);font-size:11px}
+.cls{margin:0 4px 16px;padding:12px;border-radius:12px;background:var(--s2);border:1px solid var(--line)}
+.cls small{color:var(--mu);font-size:11px}.cls div{font-weight:600;margin-top:2px;display:flex;justify-content:space-between;align-items:center}
+.lbl{color:var(--mu);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:14px 12px 8px}
+.nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:var(--mu);text-decoration:none;font-weight:500;margin-bottom:2px}
+.nav a:hover{background:var(--s2);color:var(--tx)}
+.nav a.on{background:var(--acs);color:var(--tx);box-shadow:inset 3px 0 0 var(--ac)}
+.nav a.on svg{color:var(--ac)}
+.me{margin-top:auto;padding:12px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center}
+.av{width:36px;height:36px;border-radius:50%;background:var(--s2);border:1px solid var(--line);display:grid;place-items:center;font-weight:700}
+.me b{display:block;font-size:13px}.me small{color:var(--mu);font-size:11px}
+main{min-width:0}
+.top{position:sticky;top:0;z-index:5;background:rgba(11,13,18,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:14px 28px;display:flex;justify-content:space-between;align-items:center;gap:14px}
+.top h1{font-size:18px;margin:0;letter-spacing:-.01em}
+.top small{color:var(--mu);font-size:12px}
+.search{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--line);border-radius:10px;padding:0 12px;height:38px;width:300px;color:var(--mu)}
+.search input{background:none;border:0;outline:0;color:var(--tx);width:100%;font:inherit}
+.wrap{padding:24px 28px 48px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.card{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.st small{color:var(--mu);font-size:12px;display:flex;justify-content:space-between;align-items:center}
+.st .n{font-size:26px;font-weight:700;letter-spacing:-.02em;margin-top:10px}
+.st .d{font-size:12px;color:var(--mu);margin-top:4px}
+.st.hi{background:linear-gradient(160deg,#e5484d,#b91c1c);border:0;color:#fff}
+.st.hi small,.st.hi .d{color:rgba(255,255,255,.8)}
+.g2{display:grid;grid-template-columns:1.2fr 1fr;gap:14px}
+.ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap}
+.ph h2{font-size:15px;margin:0}.ph small{color:var(--mu);font-size:12px}
+.row{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:var(--s2);margin-bottom:8px}
+.row b{display:block;font-size:14px}.row small{color:var(--mu);font-size:12px}
+.row .r{margin-left:auto;text-align:right}
+.pill{font-size:11px;font-weight:600;padding:4px 9px;border-radius:999px;background:var(--s1);border:1px solid var(--line);color:var(--mu);white-space:nowrap}
+.pill.ok{color:var(--ok);border-color:rgba(62,207,142,.3);background:rgba(62,207,142,.1)}
+.pill.wn{color:var(--wn);border-color:rgba(245,181,70,.3);background:rgba(245,181,70,.1)}
+.pill.hi{color:#ff8a8d;border-color:rgba(229,72,77,.4);background:var(--acs)}
+.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.tbl th{text-align:left;color:var(--mu);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:12px;background:var(--s2)}
+.tbl td{padding:12px;border-top:1px solid var(--line)}
+.tbl th:first-child,.tbl td:first-child{padding-left:16px}
+.tbl th:last-child,.tbl td:last-child{text-align:right;padding-right:16px}
+.tbl small{display:block;color:var(--mu);font-size:12px}
+.tw{overflow-x:auto;border-radius:var(--r);border:1px solid var(--line);background:var(--s1)}
+.acts{display:inline-flex;gap:6px}
+.acts button{height:30px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--s2);font-size:12px;font-weight:600}
+.acts .d{color:#ff8a8d}
+.chips{display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px}
+.chips button{height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--s1);font-weight:600;font-size:13px;white-space:nowrap}
+.chips button.on{background:var(--tx);color:#0b0d12;border-color:var(--tx)}
+.kasc{width:100%}
+.kasc th:nth-child(1),.kasc td:nth-child(1){width:90px}
+.kasc th:nth-child(2),.kasc td:nth-child(2){width:60%}
+.kasc th:last-child,.kasc td:last-child{text-align:left;padding-left:28px;padding-right:12px}
+.mcards{display:none}
+.dd{position:relative;display:inline-block}
+.ddm{position:absolute;top:calc(100% + 6px);left:0;min-width:200px;background:var(--s1);border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 16px 40px rgba(0,0,0,.45);display:none;z-index:40;max-height:320px;overflow:auto}
+.ddm.open{display:block}
+.ddm button{display:block;width:100%;text-align:left;background:none;border:0;padding:10px 12px;border-radius:8px;color:var(--tx);font-weight:600;font-size:14px}
+.ddm button:hover{background:var(--s2)}
+.ddm button.on{color:var(--ac)}
+.cls .ddm{display:none}
+.cls .ddm.open{display:block}
+.mc{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.mc .t{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.mc b{display:block;font-size:15px}.mc small{color:var(--mu);font-size:12px}
+.mc .f{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.mc .f span{font-size:12px;color:var(--mu)}
+.bn{display:none}
+.mnav{display:none}
+.dx{display:none}
+.login{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(800px 400px at 50% -10%,rgba(229,72,77,.22),transparent 60%),var(--bg)}
+.lc{width:100%;max-width:400px;background:var(--s1);border:1px solid var(--line);border-radius:20px;padding:30px 24px}
+.lc h1{font-size:24px;margin:18px 0 6px;letter-spacing:-.02em}
+.lc p{margin:0 0 22px;color:var(--mu)}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--s2);padding:4px;border-radius:12px;margin-bottom:18px}
+.seg button{border:0;background:none;padding:10px;border-radius:9px;color:var(--mu);font-weight:600}
+.seg button.on{background:var(--s1);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.lc label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px;color:#c9cedb}
+.lc input,.fld{width:100%;height:48px;border-radius:12px;border:1px solid var(--line);background:var(--s2);color:var(--tx);padding:0 14px;font:inherit;font-size:16px}
+.lc input:focus{outline:0;border-color:var(--ac);box-shadow:0 0 0 3px var(--acs)}
+.lc .btn{width:100%;justify-content:center;height:50px;margin-top:22px;font-size:15px}
+.hide{display:none!important}
+.ck{width:32px;height:32px;border-radius:9px;border:2px solid #3a4256;background:var(--s2);display:inline-grid;place-items:center;cursor:pointer;flex:none;padding:0;color:#052e1f}
+.ck.on{background:var(--ok);border-color:var(--ok)}
+.kas3{grid-template-columns:repeat(3,1fr)}
+@media (max-width:900px){.kas3{grid-template-columns:1fr 1fr!important;gap:10px}.kas3 .card{padding:12px 14px}.kas3 .card:last-child{grid-column:1/-1}.kas3 .n{font-size:20px;margin-top:6px}.kas3 .d{font-size:11px}.kas3 small{font-size:11px}.jdadd{width:100%;justify-content:center}}
+.jdadd{margin-left:auto}
+.lc .swap{margin:30px 0 0;text-align:center;color:var(--mu);font-size:13px}
+.swap a{color:var(--ac);font-weight:700;text-decoration:none}
+#fl,#fr{animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.meter{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.meter span{height:4px;border-radius:4px;background:var(--line)}
+.sm{font-size:12px;color:var(--mu);margin-top:6px}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:19;display:none}
+.scrim.open{display:block}
+.xb{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--s2);display:grid;place-items:center;color:var(--tx);cursor:pointer}
+.sheet{position:fixed;inset:auto 0 0 0;background:var(--s1);border-top:1px solid var(--line);border-radius:20px 20px 0 0;padding:14px 16px calc(20px + env(safe-area-inset-bottom,0px));z-index:20;display:none}
+.sheet.open{display:block}
+.sheet .grab{width:40px;height:4px;background:var(--line);border-radius:4px;margin:0 auto 14px}
+.sheet a{display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;color:var(--tx);text-decoration:none;font-weight:600}
+.sheet a:hover{background:var(--s2)}
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .hd{display:none!important}
+  aside{display:flex!important;position:fixed;left:0;top:0;bottom:0;width:280px;height:100vh;transform:translateX(-102%);transition:transform .25s ease;z-index:30;box-shadow:0 0 40px rgba(0,0,0,.5)}
+  aside.open{transform:none}
+  .mnav{display:inline-flex}
+  .dx{display:grid;position:absolute;top:14px;right:14px}
+  .top{padding:12px 16px}
+  .search{display:none}
+  .wrap{padding:16px 14px 110px}
+  .stats{grid-template-columns:1fr 1fr}
+  .g2{grid-template-columns:1fr}
+  .tw.dt{display:none}
+  .mcards{display:block}
+  .bn{display:none!important;grid-template-columns:repeat(5,minmax(0,1fr));justify-items:center;position:fixed;bottom:0;left:0;right:0;background:rgba(18,21,28,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));z-index:10}
+  .bn a{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--mu);text-decoration:none;padding:6px 0;border-radius:12px;font-weight:600}
+  .bn a.on{color:var(--tx)}
+  .bn a.on .ico{background:var(--acs);color:var(--ac)}
+  .bn .ico{width:44px;height:28px;border-radius:999px;display:grid;place-items:center}
+  .fab{position:fixed;right:16px;bottom:calc(92px + env(safe-area-inset-bottom,0px));height:52px;padding:0 18px;border-radius:999px;border:0;background:var(--ac);color:#fff;font-weight:700;box-shadow:0 12px 28px rgba(229,72,77,.35);z-index:9;display:inline-flex;align-items:center;gap:8px}
+}
+.fab{display:none}
+@media (max-width:480px){.stats{grid-template-columns:1fr 1fr}.st .n{font-size:22px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="scrim" id="scrim" onclick="sheet(false)"></div><div class="sheet" id="sheet"><div class="grab"></div><button class="xb" onclick="sheet(false)" aria-label="Tutup"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <a href="#siswa">Data Siswa</a><a href="#rekap">Buku Kas &amp; Rekap</a><a href="#tugas">Tugas &amp; PR</a><a href="#admin">Administrasi Kelas</a><a href="#dev">Developer Console</a><a href="#" onclick="logout();return false" style="color:#ff8a8d;margin-top:8px;border-top:1px solid var(--line);border-radius:0;padding-top:16px">Keluar</a>
+  
+</div>
+<script>
+const I={
+  home:'<path d="M3 11l9-7 9 7v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/>',
+  users:'<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/>',
+  cal:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>',
+  wallet:'<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M16 13h2"/><path d="M3 10h18"/>',
+  file:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+  layers:'<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
+  term:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M13 15h4"/>',
+  more:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
+  menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+  out:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>'
+};
+const ic=(k,c='')=>`<svg class="i ${c}" viewBox="0 0 24 24">${I[k]}</svg>`;
+const menu=[['dashboard','Dashboard','home'],['siswa','Data Siswa','users'],['jadwal','Jadwal Pelajaran','cal'],['kas','Kas Kelas','wallet'],['rekap','Buku Kas & Rekap','file'],['tugas','Tugas & PR','file'],['admin','Administrasi Kelas','layers'],['dev','Developer Console','term']];
+const bnav=[['dashboard','Beranda','home'],['siswa','Siswa','users'],['jadwal','Jadwal','cal'],['kas','Kas','wallet'],['more','Lainnya','more']];
+const siswa=[
+ ['01','Siswa Contoh A','Kota Contoh','20001','6281200000001'],
+ ['02','Siswa Contoh B','Kota Contoh','20002','6281200000002'],
+ ['03','Siswa Contoh C','Kota Contoh','20003','6281200000003'],
+ ['04','Siswa Contoh D','Kota Contoh','20004','6281200000004']
+];
+const KELAS=[['XI RPL C','36 siswa'],['XI RPL A','34 siswa'],['Pribadi','0 siswa']];
+let kelasIdx=0;
+function kelasOpts(){return KELAS.map((k,i)=>`<option value="${i}" ${i===kelasIdx?'selected':''}>${k[0]} (${k[1]})</option>`).join('')}
+function setKelas(i){kelasIdx=+i;route()}
+function ddToggle(id){const m=document.getElementById('dd-'+id);const o=!m.classList.contains('open');document.querySelectorAll('.ddm.open').forEach(x=>x.classList.remove('open'));m.classList.toggle('open',o)}
+document.addEventListener('click',e=>{if(!e.target.closest('.dd')){document.querySelectorAll('.ddm.open').forEach(m=>m.classList.remove('open'))}});
+function sheet(o){document.getElementById('sheet').classList.toggle('open',o);document.getElementById('scrim').classList.toggle('open',o);const a=document.querySelector('aside');if(a)a.classList.remove('open')}
+function toggleNav(o){const a=document.querySelector('aside');if(a)a.classList.toggle('open',o);document.getElementById('scrim').classList.toggle('open',o)}
+function shell(id,title,sub,body,action=''){
+  return `<div class="shell">
+  <aside>
+    <button class="xb dx" onclick="sheet(false)" aria-label="Tutup"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="logo"><div class="m">K</div><div><b>Kastor AI</b><small>Classroom OS</small></div></div>
+    <div class="cls${role==='developer'?' dd':''}" style="cursor:pointer;display:block" onclick="${role==='developer'?"ddToggle('kls')":''}"><small>Kelas</small><div>${KELAS[kelasIdx][0]} (${KELAS[kelasIdx][1]}) <span style="color:var(--mu);font-size:12px">▾</span></div><div class="ddm" id="dd-kls" style="left:0;right:0">${KELAS.map((k,i)=>`<button class="${i===kelasIdx?'on':''}" onclick="setKelas(${i})">${k[0]} (${k[1]})</button>`).join('')}</div></div>
+    <div class="lbl">Administrasi</div>
+    <nav class="nav">${menu.filter(([k])=>canOpen(k)).map(([k,l,i])=>`<a href="#${k}" class="${k===id?'on':''}">${ic(i)}${l}</a>`).join('')}</nav>
+    <div class="me"><div class="av">R</div><div style="flex:1;min-width:0"><b>Rasyid</b><small class="mo">Developer</small></div><a href="#" onclick="logout();return false" title="Keluar" style="color:var(--mu)">${ic('out')}</a></div>
+  </aside>
+  <main>
+    <div class="top"><div style="display:flex;gap:12px;align-items:center"><button class="btn g mnav" onclick="toggleNav(true)" aria-label="Menu">${ic('menu')}</button><div><small>Kastor AI / ${sub}</small><h1>${title}</h1></div></div>
+      <div style="display:flex;gap:10px;align-items:center"><div class="search">${ic('search')}<input placeholder="Cari siswa, tugas, atau NIS"></div><button class="btn g" aria-label="Notifikasi">${ic('bell')}</button></div></div>
+    <div class="wrap">${body}</div>
+  </main>
+</div>
+<nav class="bn">${bnav.map(([k,l,i])=>`<a href="#${k==='more'?'':k}" ${k==='more'?'onclick="event.preventDefault();sheet(true)"':''} class="${k===id?'on':''}"><span class="ico">${ic(i)}</span>${l}</a>`).join('')}</nav>
+${action}`;
+}
+const P={
+ login(){return `<div class="login"><div class="lc">
+   <div class="logo" style="padding:0"><div class="m">K</div><div><b>Kastor AI</b><small>Portal pengurus</small></div></div>
+   <h1 id="t">Selamat datang</h1><p id="s">Masuk untuk mengelola kelas XI RPL C.</p>
+   
+   <div id="fl"><label>Nomor WhatsApp</label><input id="lwa" type="tel" placeholder="08xxxxxxxxxx" oninput="detectRole()"><label>Kata sandi</label><input type="password" placeholder="Kata sandi kamu"><div id="rdet" class="sm" style="margin-top:14px;min-height:18px"></div><button class="btn p" style="width:100%;justify-content:center;margin-top:10px;height:50px" onclick="doLogin()">Masuk ke dashboard</button><p class="swap">Belum punya akun? <a href="#" onclick="auth(0);return false">Daftar sekarang</a></p></div>
+   <div id="fr" class="hide"><label>Nomor WhatsApp pengurus</label><input type="tel" placeholder="08xxxxxxxxxx"><label>Buat kata sandi</label><input id="np" type="password" placeholder="Minimal 8 karakter" oninput="pw()"><div class="meter" id="mt"><span></span><span></span><span></span><span></span></div><div class="sm" id="sl">Belum diisi</div><label>Ulangi kata sandi</label><input id="cp" type="password" placeholder="Ketik ulang" oninput="pw()"><div class="sm" id="mc"></div><button class="btn p" id="db" disabled>Daftar sebagai pengurus</button><p class="swap">Sudah punya akun? <a href="#" onclick="auth(1);return false">Masuk</a></p></div>
+ </div></div>`},
+ dashboard(){return shell('dashboard','Dashboard','Ringkasan',`
+  <div class="stats">
+    <div class="card st hi"><small>Siswa terdata</small><div class="n">36</div><div class="d">1 jabatan pengurus aktif</div></div>
+    <div class="card st"><small>Kas minggu ini <span class="pill ok">Lunas 31</span></small><div class="n">Rp1,2jt</div><div class="d">Menunggak 5 siswa</div></div>
+    <div class="card st"><small>Tugas aktif</small><div class="n">4</div><div class="d">2 tenggat minggu ini</div></div>
+    <div class="card st"><small>Minggu berjalan</small><div class="n">18</div><div class="d">TA 2026/2027</div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="ph"><div><h2>Jadwal hari ini</h2><small>Senin, minggu ke-18</small></div><a href="#jadwal" class="btn" style="text-decoration:none;height:32px">Lihat semua</a></div>
+      <div class="row"><span class="mo" style="color:var(--ok);font-weight:600;width:52px">07:00</span><div><b>Pemrograman Web</b><small>Lab 2 · Bu Sari</small></div><div class="r"><span class="pill ok">Berjalan</span></div></div>
+      <div class="row"><span class="mo" style="color:var(--mu);width:52px">09:30</span><div><b>Basis Data</b><small>Ruang 12 · Pak Hadi</small></div></div>
+      <div class="row"><span class="mo" style="color:var(--mu);width:52px">13:00</span><div><b>Bahasa Inggris</b><small>Ruang 12 · Bu Rina</small></div></div>
+    </div>
+    <div class="card"><div class="ph"><div><h2>Tugas terdekat</h2><small>Dari tenggat terdekat</small></div><a href="#tugas" class="btn" style="text-decoration:none;height:32px">Semua</a></div>
+      <div class="row"><div><b>Laporan praktikum API</b><small>Pemrograman Web · 2 hari lagi</small></div><div class="r"><span class="pill hi">Mendesak</span></div></div>
+      <div class="row"><div><b>Normalisasi tabel</b><small>Basis Data · 4 hari lagi</small></div><div class="r"><span class="pill">12/36</span></div></div>
+      <div class="row"><div><b>Essay recount text</b><small>Bahasa Inggris · 6 hari lagi</small></div><div class="r"><span class="pill ok">Baru</span></div></div>
+    </div>
+  </div>`)},
+ siswa(){
+  const rows=siswa.map(([n,nm,kt,nis,wa])=>`<tr><td class="mo" style="color:var(--mu)">${n}</td><td><b>${nm}</b><small>${kt}</small></td><td class="mo">${nis}</td><td class="mo">${wa}</td><td><span class="acts"><button>Detail</button><button>Ubah</button></span></td></tr>`).join('');
+  const cards=siswa.map(([n,nm,kt,,wa])=>`<div class="mc"><div class="t"><div><b>${nm}</b><small>${kt}</small></div><span class="pill mo">${n}</span></div><div class="f"><span class="mo">${wa}</span><span class="acts"><button>Detail</button></span></div></div>`).join('');
+  return shell('siswa','Data Siswa','Siswa',`
+   <div class="ph"><div class="chips" style="margin:0"><button class="on">Semua · 36</button><button>Laki-laki</button><button>Perempuan</button></div><button class="btn p hd">${ic('plus')} Tambah siswa</button></div>
+   <div class="tw dt"><table class="tbl"><thead><tr><th>Absen</th><th>Nama</th><th>NIS</th><th>WhatsApp</th><th>Aksi</th></tr></thead><tbody>${rows}</tbody></table></div>
+   <div class="mcards">${cards}</div>
+   <button class="fab">${ic('plus')} Siswa</button>`,'');
+ },
+ jadwal(){return shell('jadwal','Jadwal Pelajaran','Jadwal',`
+   <div class="chips"><button class="on">Senin</button><button>Selasa</button><button>Rabu</button><button>Kamis</button><button>Jumat</button></div>
+   <div class="card"><div class="ph"><div><h2>Senin · minggu ke-18</h2><small>Hari ini</small></div><button class="btn p">${ic('plus')} Tambah jadwal</button></div>
+     <div class="row"><span class="mo" style="font-weight:600;width:52px;color:var(--ok)">07:00</span><div><b>Pemrograman Web</b><small>Lab 2 · Bu Sari</small></div><div class="r"><span class="pill ok">Berjalan</span></div></div>
+     <div class="row"><span class="mo" style="font-weight:600;width:52px;color:var(--mu)">09:30</span><div><b>Basis Data</b><small>Ruang 12 · Pak Hadi</small></div></div>
+     <div class="row"><span class="mo" style="font-weight:600;width:52px;color:var(--mu)">13:00</span><div><b>Bahasa Inggris</b><small>Ruang 12 · Bu Rina</small></div></div>
+   </div>`)},
+ kas(){const rows=siswa.map(([n,nm])=>`<tr><td class="mo" style="color:var(--mu)">${n}</td><td><b>${nm}</b></td><td><span class="pill ok">Lunas</span></td></tr>`).join('');
+   return shell('kas','Kas Kelas','Kas',`
+   <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+     <div class="card st"><small>Tarif per minggu</small><div class="n">Rp5.000</div></div>
+     <div class="card st"><small>Minggu aktif</small><div class="n">14</div><div class="d">Minggu 2 s/d 17 (2 libur)</div></div>
+     <div class="card st hi"><small>Bendahara</small><div class="n" style="font-size:20px">Nicko, Felly</div></div>
+   </div>
+   <div class="tw dt"><table class="tbl"><thead><tr><th>Absen</th><th>Nama siswa</th><th>Minggu 18</th></tr></thead><tbody>${rows}</tbody></table></div>
+   <div class="mcards">${siswa.map(([n,nm])=>`<div class="mc"><div class="t"><div><b>${nm}</b><small>Absen ${n} · Minggu 18</small></div><span class="pill ok">Lunas</span></div></div>`).join('')}</div>`)},
+ tugas(){return shell('tugas','Tugas & PR','Tugas',`
+   <div class="chips"><button class="on">Aktif · 4</button><button>Riwayat</button></div>
+   <div class="card">
+     <div class="row"><div><b>Laporan praktikum API</b><small>Pemrograman Web · 2 hari lagi</small></div><div class="r"><span class="pill hi">Mendesak</span></div></div>
+     <div class="row"><div><b>Normalisasi tabel</b><small>Basis Data · 12 dari 36 sudah kumpul</small></div><div class="r"><span class="pill">Berjalan</span></div></div>
+     <div class="row"><div><b>Essay recount text</b><small>Bahasa Inggris · 6 hari lagi</small></div><div class="r"><span class="pill ok">Baru</span></div></div>
+   </div>`)},
+ admin(){return shell('admin','Administrasi Kelas','Administrasi',`
+   <div class="g2">
+     <div class="card"><div class="ph"><div><h2>Struktur pengurus</h2><small>Dipilih dari Data Siswa</small></div><button class="btn p">${ic('plus')} Atur jabatan</button></div>
+       <div class="row"><span class="pill hi">Ketua</span><div><b>Sambega</b><small class="mo">6281200000011</small></div></div>
+       <div class="row"><span class="pill">Sekretaris</span><div><b>Lexsa</b><small class="mo">6281200000012</small></div></div>
+       <div class="row"><span class="pill ok">Bendahara</span><div><b>Felly</b><small class="mo">6281200000013</small></div></div>
+     </div>
+     <div class="card"><div class="ph"><div><h2>Pengumuman</h2><small>Pratinjau pesan WhatsApp</small></div><button class="btn">Salin</button></div>
+       <div class="fld mo" style="height:auto;padding:14px;font-size:13px;line-height:1.6;white-space:pre-wrap;color:#cfd4e0">*PENGUMUMAN KELAS XI RPL C*
+Besok seluruh siswa wajib hadir pukul 06.45 WIB.
+_Tertanda: Pengurus Kelas_</div>
+     </div>
+   </div>`)},
+ dev(){return shell('dev','Developer Console','Developer',`
+   <div class="stats">
+     <div class="card st"><small>RAM terpakai</small><div class="n">68%</div></div>
+     <div class="card st"><small>Disk terpakai</small><div class="n">4%</div></div>
+     <div class="card st"><small>Uptime</small><div class="n">9 hari</div></div>
+     <div class="card st hi"><small>Status</small><div class="n" style="font-size:20px">Online</div></div>
+   </div>
+   <div class="tw"><table class="tbl"><thead><tr><th>Tabel</th><th>Keterangan</th><th>Jumlah</th></tr></thead><tbody>
+     <tr><td class="mo">classes</td><td>Grup kelas terdaftar</td><td class="mo">3</td></tr>
+     <tr><td class="mo">students</td><td>Total siswa</td><td class="mo">36</td></tr>
+     <tr><td class="mo">schedules</td><td>Slot jadwal</td><td class="mo">264</td></tr>
+   </tbody></table></div>`)}
+};
+const kasSt={1:true,2:false,3:true,4:false};
+let kasWk=18;
+function kasWeek(d){kasWk=Math.min(18,Math.max(2,kasWk+d));route()}
+function kasPay(i){kasSt[i]=!kasSt[i];route()}
+P.kas=function(){
+  const lunas=siswa.filter((_,i)=>kasSt[i+1]).length;
+  const rows=siswa.map(([n,nm],i)=>{const on=kasSt[i+1];return `<tr><td class="mo" style="color:var(--mu)">${n}</td><td><b>${nm}</b></td><td style="text-align:right"><button class="pill ${on?'ok':'wn'}" onclick="kasPay(${i+1})">${on?'Lunas':'Belum bayar'}</button></td></tr>`}).join('');
+  const cards=siswa.map(([n,nm],i)=>{const on=kasSt[i+1];return `<div class="mc"><div class="t"><div><b>${nm}</b><small>Absen ${n} · Minggu ${kasWk}</small></div><button class="pill ${on?'ok':'wn'}" onclick="kasPay(${i+1})">${on?'Lunas':'Belum bayar'}</button></div></div>`}).join('');
+  return shell('kas','Kas Kelas','Kas',`
+   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px"><div style="display:flex;gap:8px;align-items:center"><button class="btn" onclick="kasWeek(-1)">←</button><div class="card" style="padding:8px 14px;font-weight:700">Minggu ${kasWk}</div><button class="btn" onclick="kasWeek(1)">→</button></div><span class="sm" style="margin:0">${lunas} dari ${siswa.length} siswa lunas</span></div>
+   <div class="tw dt"><table class="tbl"><thead><tr><th>Absen</th><th>Nama siswa</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>
+   <div class="mcards">${cards}</div>`);
+};
+const TRF=5000;
+const kbase={18:{1:5000,2:0,3:5000,4:0},17:{1:5000,2:5000,3:5000,4:0},16:{1:5000,2:5000,3:0,4:5000}};
+const klib={};
+let kwk=18;
+const kpool={1:14*TRF,2:11*TRF,3:15*TRF,4:9*TRF};
+function kpGet(w,i){if(klib[w])return 0;let before=0;for(let x=2;x<w;x++){if(!klib[x])before++}return Math.min(TRF,Math.max(0,kpool[i]-before*TRF))}
+function kpOwe(w,i){let s=0;for(let x=2;x<=w;x++){if(klib[x])continue;s+=TRF-kpGet(x,i)}return s}
+function kpStat(w,i){if(klib[w])return 'libur';return kpGet(w,i)>=TRF?'lunas':'kurang'}
+function kpRp(n){return 'Rp'+n.toLocaleString('id-ID')}
+function kwGo(d){kwk=Math.min(18,Math.max(2,kwk+d));route()}
+const kin={};
+function kinGet(x,i){return kin[x]&&kin[x][i]!==undefined?kin[x][i]:x}
+function kpTapW(x,i){if(kpOwe(18,i)>0){kpool[i]+=TRF}else if(kpool[i]>=TRF){kpool[i]-=TRF}route()}
+function kpTap(i){kpTapW(kwk,i)}
+function kpLib(){klib[kwk]=!klib[kwk];route()}
+function kpCell(w,i,editable){const s=kpStat(w,i);if(s==='libur')return '<span class="pill">Libur</span>';if(s==='lunas')return editable?`<button class="pill ok" onclick="kpTap(${i})">Lunas</button>`:'<span class="pill ok">Lunas</span>';const t=kpRp(TRF-kpGet(w,i));return editable?`<button class="pill wn" onclick="kpTap(${i})">Kurang ${t}</button>`:`<span class="pill wn">Kurang ${t}</span>`}
+P.kas=function(){
+  const w=kwk;
+  const cols=[w-2,w-1,w].filter(x=>x>=2);
+  const lunas=siswa.filter((_,k)=>kpStat(w,k+1)==='lunas').length;
+  const tunggak=siswa.reduce((a,_,k)=>a+(kpStat(w,k+1)==='kurang'?TRF-kpGet(w,k+1):0),0);
+  const pct=Math.round(lunas/siswa.length*100);
+  const rows=siswa.map(([n,nm],k)=>`<tr><td class="mo" style="color:var(--mu)">${n}</td><td><b>${nm}</b></td>${cols.map(c=>`<td style="text-align:right">${kpCell(c,k+1,c===w)}</td>`).join('')}</tr>`).join('');
+  const head=cols.map(c=>`<th style="text-align:right">Minggu ${c}${c===w?' (aktif)':''}</th>`).join('');
+  const cards=siswa.map(([n,nm],k)=>{const prev=w-1>=2?`<small>Minggu ${w-1}: ${kpStat(w-1,k+1)==='libur'?'libur':kpStat(w-1,k+1)==='lunas'?'lunas':'kurang '+kpRp(TRF-kpGet(w-1,k+1))}</small>`:'';return `<div class="mc"><div class="t"><div><b>${nm}</b><small>Absen ${n}</small>${prev}</div>${kpCell(w,k+1,true)}</div></div>`}).join('');
+  return shell('kas','Kas Kelas','Kas',`
+  <div class="stats kas3">
+   <div class="card st"><small>Tarif per minggu</small><div class="n">${kpRp(TRF)}</div></div>
+   <div class="card st hi"><small>Minggu ${w} · lunas</small><div class="n">${lunas}<span style="font-size:14px;opacity:.8"> / ${siswa.length}</span></div><div class="d">${pct}% siswa sudah bayar</div></div>
+   <div class="card st"><small>Total kurang</small><div class="n">${kpRp(tunggak)}</div><div class="d">${klib[w]?'Minggu ini libur':'Belum ditutup'}</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+   <div style="display:flex;gap:8px;align-items:center"><button class="btn" onclick="kwGo(-1)">←</button><div class="card" style="padding:8px 14px;font-weight:700">Minggu ${w}</div><button class="btn" onclick="kwGo(1)">→</button></div>
+   <button class="btn ${klib[w]?'p':''}" onclick="kpLib()">${klib[w]?'Batal libur':'Set libur'}</button>
+  </div>
+  <div class="tw dt"><table class="tbl"><thead><tr><th>Absen</th><th>Nama siswa</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="mcards">${cards}</div>`);
+};
+P.kas=function(){
+  const w=kwk;
+  const cols=[w-2,w-1,w].filter(x=>x>=2);
+  const cell=(c,i,ed)=>{
+    if(klib[c])return '<span class="pill">Libur</span>';
+    if(c===w){
+      const ow=kpOwe(w,i);
+      if(ow===0)return ed?`<button class="pill ok" onclick="kpTap(${i})">Lunas</button>`:'<span class="pill ok">Lunas</span>';
+      return ed?`<button class="pill wn" onclick="kpTap(${i})">Kurang ${kpRp(ow)}</button>`:`<span class="pill wn">Kurang ${kpRp(ow)}</span>`;
+    }
+    return kpGet(c,i)>=TRF?'<span class="pill ok">Lunas</span>':'<span class="pill wn">Belum</span>';
+  };
+  const lunas=siswa.filter((_,k)=>kpGet(w,k+1)>=TRF).length;
+  const tunggak=siswa.reduce((a,_,k)=>a+(klib[w]?0:kpOwe(w,k+1)),0);
+  const pct=Math.round(lunas/siswa.length*100);
+  const rows=siswa.map(([n,nm],k)=>`<tr><td class="mo" style="color:var(--mu)">${n}</td><td><b>${nm}</b></td>${cols.map(c=>`<td style="text-align:right">${cell(c,k+1,c===w)}</td>`).join('')}</tr>`).join('');
+  const head=cols.map(c=>`<th style="text-align:right">Minggu ${c}${c===w?' (aktif)':''}</th>`).join('');
+  const cards=siswa.map(([n,nm],k)=>{const i=k+1;const st=klib[w]?'#8b93a7':kpOwe(w,i)===0?'#3ecf8e':'#e5484d';const pv=w-1>=2?(klib[w-1]?'Libur':kpGet(w-1,i)>=TRF?'Lunas':'Belum bayar'):'';return `<div class="mc" style="border-left:4px solid ${st}"><div class="t"><div><b>${nm}</b><small style="display:block">Absen ${n}</small></div>${cell(w,i,true)}</div>${pv?`<small style="display:block;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">Minggu ${w-1}: ${pv}</small>`:''}</div>`}).join('');
+  return shell('kas','Kas Kelas','Kas',`
+  <div class="stats kas3">
+   <div class="card st"><small>Tarif per minggu</small><div class="n">${kpRp(TRF)}</div></div>
+   <div class="card st hi"><small>Minggu ${w} · lunas</small><div class="n">${lunas}<span style="font-size:14px;opacity:.8"> / ${siswa.length}</span></div><div class="d">${pct}% siswa sudah bayar</div></div>
+   <div class="card st"><small>Total kurang</small><div class="n">${kpRp(tunggak)}</div><div class="d">${klib[w]?'Minggu ini libur':'Termasuk minggu sebelumnya'}</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+   <div style="display:flex;gap:8px;align-items:center"><button class="btn" onclick="kwGo(-1)">←</button><div class="card" style="padding:8px 14px;font-weight:700">Minggu ${w}</div><button class="btn" onclick="kwGo(1)">→</button></div>
+   <button class="btn ${klib[w]?'p':''}" onclick="kpLib()">${klib[w]?'Batal libur':'Set libur'}</button>
+  </div>
+  <div class="tw dt"><table class="tbl"><thead><tr><th>Absen</th><th>Nama siswa</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="mcards">${cards}</div>`);
+};
+P.rekap=function(){
+  const w=kwk;
+  const rng=[...Array(w-1)].map((_,j)=>j+2);
+  const aktif=rng.filter(x=>!klib[x]).length;
+  const masuk=siswa.reduce((a,_,k)=>a+kpaid[k+1],0);
+  const tunggak=siswa.reduce((a,_,k)=>a+kpOwe(w,k+1),0);
+  const lunasMg=i=>rng.filter(x=>!klib[x]&&kpGet(x,i)>=TRF).length;
+  const sisa=(i)=>{const ow=kpOwe(w,i);return ow===0?'<span class="pill ok">Lunas</span>':`<span class="pill wn">${kpRp(ow)}</span>`};
+  const rows=siswa.map(([n,nm],k)=>`<tr><td class="mo" style="color:var(--mu)">${n}</td><td><b>${nm}</b></td><td style="text-align:right" class="mo">${kpRp(kpaid[k+1])}</td><td style="text-align:right">${lunasMg(k+1)} / ${aktif}</td><td style="text-align:right">${sisa(k+1)}</td></tr>`).join('');
+  const cards=siswa.map(([n,nm],k)=>`<div class="mc"><div class="t"><div><b>${nm}</b><small>Dibayar ${kpRp(kpaid[k+1])} · Lunas ${lunasMg(k+1)} / ${aktif} minggu</small></div>${sisa(k+1)}</div></div>`).join('');
+  return shell('rekap','Buku Kas & Rekap','Rekap',`
+  <div class="stats kas3">
+   <div class="card st"><small>Total kas masuk</small><div class="n">${kpRp(masuk)}</div><div class="d">Sejak minggu 2</div></div>
+   <div class="card st hi"><small>Total tunggakan</small><div class="n">${kpRp(tunggak)}</div><div class="d">Sampai minggu ${w}</div></div>
+   <div class="card st"><small>Minggu aktif</small><div class="n">${aktif}</div><div class="d">Tidak termasuk libur</div></div>
+  </div>
+  <div class="tw dt"><table class="tbl"><thead><tr><th>Absen</th><th>Nama</th><th style="text-align:right">Total dibayar</th><th style="text-align:right">Minggu lunas</th><th style="text-align:right">Tunggakan</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="mcards">${cards}</div>`);
+};
+P.rekap=function(){
+  const w=kwk;
+  const MB=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  const HR=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  const tgl=x=>{const d=new Date(2026,9,28-(18-x)*7);return `${HR[d.getDay()]}, ${d.getDate()} ${MB[d.getMonth()]} ${d.getFullYear()}`};
+  const weeks=[];for(let x=w;x>=2;x--){if(!klib[x])weeks.push(x)}
+  const entries=weeks.map(x=>({x,paid:siswa.map(([n,nm],k)=>({n,nm,k:k+1})).filter(s=>kpGet(x,s.k)>=TRF)})).filter(e=>e.paid.length>0);
+  const masuk=entries.reduce((a,e)=>a+e.paid.length*TRF,0);
+  const periode=entries.filter(e=>e.x>w-4).reduce((a,e)=>a+e.paid.length*TRF,0);
+  const group=e=>{const jumlah=e.paid.length*TRF;const desc=e.paid.map(p=>`#${p.n} ${p.nm} (Mgg ${e.x})`).join(', ');return `<div class="card" style="padding:0;margin-bottom:12px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--s2)"><span class="mo" style="font-weight:700;font-size:13px;display:flex;gap:8px;align-items:center">${ic('cal')}${tgl(e.x)}</span><span class="pill ok">+${kpRp(jumlah)}</span></div><div style="display:flex;gap:12px;align-items:center;padding:14px 16px"><div style="width:38px;height:38px;border-radius:10px;background:var(--acs);display:grid;place-items:center;color:var(--ac);flex:none">${ic('wallet')}</div><div style="min-width:0;flex:1"><div style="font-weight:700">Pemasukan Kas Siswa (${e.paid.length} pembayaran) <span class="pill" style="margin-left:6px">Otomatis Kas</span></div><div style="color:var(--mu);font-size:12px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${desc}</div></div><div class="mo" style="color:var(--ok);font-weight:700;white-space:nowrap">+${kpRp(jumlah)}</div></div></div>`};
+  return shell('rekap','Buku Kas & Rekapitulasi Keuangan Kelas','Buku Kas',`
+  <div class="stats kas3" style="margin-bottom:14px">
+   <div class="card st"><small>Saldo kas saat ini <span class="pill ok">Surplus</span></small><div class="n" style="color:var(--ok)">${kpRp(masuk)}</div><div class="d">Total masuk ${kpRp(masuk)} · keluar Rp0</div></div>
+   <div class="card st"><small>Pemasukan periode ini <span class="pill">30 hari</span></small><div class="n" style="color:var(--ok)">+${kpRp(periode)}</div><div class="d">Kas siswa &amp; pemasukan kelas</div></div>
+   <div class="card st"><small>Pengeluaran periode ini <span class="pill hi">30 hari</span></small><div class="n" style="color:#ff8a8d">-Rp0</div><div class="d">Arus kas bersih +${kpRp(periode)}</div></div>
+  </div>
+  <div class="card" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between;margin-bottom:14px">
+   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="sm" style="margin:0">Periode:</span><div class="fld" style="width:auto;height:40px;display:flex;align-items:center;padding:0 14px">30 Hari (1 Bulan) ▾</div><span class="sm" style="margin:0">Tampilan:</span><div class="fld" style="width:auto;height:40px;display:flex;align-items:center;padding:0 14px">Per Hari ▾</div></div>
+   <button class="btn p">${ic('plus')} Catat Transaksi</button>
+  </div>
+  ${entries.filter(e=>e.x>w-4).map(group).join('')}`);
+};
+P.rekap=function(){
+  const w=kwk;
+  const MB=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  const HR=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  const tgl=x=>{const d=new Date(2026,9,28-(18-x)*7);return `${HR[d.getDay()]}, ${d.getDate()} ${MB[d.getMonth()]} ${d.getFullYear()}`};
+  const weeks=[];for(let x=w;x>=2;x--){if(!klib[x])weeks.push(x)}
+  const entries=weeks.map(x=>({x,paid:siswa.map(([n,nm],k)=>({n,nm,k:k+1})).filter(s=>kpGet(x,s.k)>=TRF)})).filter(e=>e.paid.length>0);
+  const masuk=entries.reduce((a,e)=>a+e.paid.length*TRF,0);
+  const periode=entries.filter(e=>e.x>w-4).reduce((a,e)=>a+e.paid.length*TRF,0);
+  const group=e=>{const jumlah=e.paid.length*TRF;const desc=e.paid.map(p=>`#${p.n} ${p.nm} (Mgg ${e.x})`).join(', ');return `<div class="card" style="margin-bottom:14px"><div class="ph"><div><h2 class="mo" style="font-size:14px;display:flex;gap:8px;align-items:center">${ic('cal')}${tgl(e.x)}</h2><small>Minggu ${e.x}</small></div><span class="pill ok">+${kpRp(jumlah)}</span></div><div class="row" style="margin:0"><div style="width:40px;height:40px;border-radius:12px;background:var(--acs);color:var(--ac);display:grid;place-items:center;flex:none">${ic('wallet')}</div><div style="min-width:0;flex:1"><b>Pemasukan Kas Siswa (${e.paid.length} pembayaran) <span class="pill" style="margin-left:4px">Otomatis Kas</span></b><small style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${desc}</small></div><div class="mo" style="font-weight:700;white-space:nowrap">+${kpRp(jumlah)}</div></div></div>`};
+  return shell('rekap','Buku Kas & Rekapitulasi Keuangan Kelas','Buku Kas',`
+  <div class="stats kas3">
+   <div class="card st hi"><small>Saldo kas saat ini <span class="pill" style="background:rgba(255,255,255,.2);color:#fff;border-color:transparent">Surplus</span></small><div class="n">${kpRp(masuk)}</div><div class="d">Total masuk ${kpRp(masuk)} · keluar Rp0</div></div>
+   <div class="card st"><small>Pemasukan periode ini <span class="pill">30 hari</span></small><div class="n">+${kpRp(periode)}</div><div class="d">Kas siswa &amp; pemasukan kelas</div></div>
+   <div class="card st"><small>Pengeluaran periode ini <span class="pill hi">30 hari</span></small><div class="n">-Rp0</div><div class="d">Arus kas bersih +${kpRp(periode)}</div></div>
+  </div>
+  <div class="card" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between;margin-bottom:14px">
+   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="lbl" style="padding:0">Periode</span><button class="btn">30 Hari (1 Bulan) ▾</button><span class="lbl" style="padding:0">Tampilan</span><button class="btn">Per Hari ▾</button></div>
+   <button class="btn p">${ic('plus')} Catat Transaksi</button>
+  </div>
+  ${entries.filter(e=>e.x>w-4).map(group).join('')}`);
+};
+let jdw=18,jdTab='mapel';
+const MAPEL=[['Bahasa Inggris','WAHYU SETIYANI, S.Pd'],['Bahasa Jawa','FIRMAN ARYA DANI, S.Pd.'],['Bahasa Indonesia','WASIS SAMBODO WINOTO, S.Pd'],['Pendidikan Agama Islam dan Budi Pekerti','Muhammad Husnurridlo Az Zaini, M.Pd'],['Pemrograman Web','Bu Sari, S.Kom'],['Basis Data','Pak Hadi, S.T']];
+const BENGKEL_W=[17];
+function jdRows(w){if(BENGKEL_W.includes(w))return [['Kejuruan RPL (Bengkel / Praktik)','Bu Sari, S.Kom']];const off=(w*2)%MAPEL.length;return [0,1,2,3].map(k=>MAPEL[(off+k)%MAPEL.length])}
+function jdGo(d){jdw=Math.min(18,Math.max(2,jdw+d));route()}
+function jdSet(w){jdw=+w;route()}
+function jdTabSet(t){jdTab=t;route()}
+const JAM={
+  'Senin':['5 Jam + Upacara',[['07:00 – 07:50','Upacara Bendera'],['07:50 – 09:10','Jam Ke-1'],['09:10 – 10:45','Jam Ke-2'],['10:45 – 12:05','Jam Ke-3'],['12:05 – 12:50','Istirahat 2 & ISHOMA'],['12:50 – 14:10','Jam Ke-4'],['14:10 – 15:30','Jam Ke-5']]],
+  'Selasa & Rabu':['5 Jam Pelajaran',[['07:00 – 08:30','Jam Ke-1'],['08:30 – 10:00','Jam Ke-2'],['10:00 – 10:15','Istirahat 1'],['10:15 – 11:45','Jam Ke-3'],['11:45 – 12:30','Istirahat 2 & ISHOMA'],['12:30 – 14:00','Jam Ke-4'],['14:00 – 15:30','Jam Ke-5']]],
+  'Kamis':['5 Jam Pelajaran',[['07:00 – 08:30','Jam Ke-1'],['08:30 – 10:00','Jam Ke-2'],['10:00 – 10:15','Istirahat 1'],['10:15 – 11:45','Jam Ke-3'],['11:45 – 12:30','Istirahat 2 & ISHOMA'],['12:30 – 14:00','Jam Ke-4'],['14:00 – 15:00','Jam Ke-5']]],
+  'Jumat':['5 Jam + Refleksi',[['07:00 – 08:30','Jam Ke-1'],['08:30 – 10:00','Jam Ke-2'],['10:00 – 10:15','Istirahat 1'],['10:15 – 11:45','Jam Ke-3'],['11:45 – 13:00','Sholat Jumat & ISHOMA'],['13:00 – 14:30','Jam Ke-4'],['14:30 – 15:15','Jam Ke-5'],['15:15 – 16:00','Refleksi']]]
+};
+P.jadwal=function(){
+  const tabs=`<div class="chips" style="margin-bottom:14px"><button class="${jdTab==='mapel'?'on':''}" onclick="jdTabSet('mapel')">Jadwal Mata Pelajaran</button><button class="${jdTab==='jam'?'on':''}" onclick="jdTabSet('jam')">Alokasi Jam KBM</button></div>`;
+  if(jdTab==='jam'){
+    const cols=Object.entries(JAM).map(([hari,[ket,slots]])=>`<div class="card"><div class="ph"><h2 style="display:flex;gap:8px;align-items:center;font-size:15px">${ic('cal')}${hari}</h2><span class="pill">${ket}</span></div>${slots.map(([t,l])=>`<div class="row" style="padding:10px 12px;margin-bottom:6px"><span class="mo" style="font-size:12px;font-weight:600;white-space:nowrap">${t}</span><span style="margin-left:auto;font-size:13px;text-align:right;${/Istirahat|ISHOMA|Upacara|Refleksi/.test(l)?'color:var(--mu)':''}">${l}</span></div>`).join('')}</div>`).join('');
+    return shell('jadwal','Jadwal Blok KBM Mingguan','Jadwal Pelajaran',`${tabs}<div class="card" style="margin-bottom:14px"><div class="ph"><div><h2>Alokasi Jam Belajar Mengajar (KBM)</h2><small>Struktur sesi jam pelajaran dan waktu istirahat harian SMKN 1 Jenangan Ponorogo</small></div></div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px">${cols}</div>`);
+  }
+  const rows=jdRows(jdw);
+  const opts=[...Array(17)].map((_,k)=>k+2).map(x=>`<option value="${x}" ${x===jdw?'selected':''}>Minggu ${x}</option>`).join('');
+  const tr=rows.map(([m,g],k)=>`<tr><td class="mo" style="color:var(--mu)">${k+1}</td><td>${m.includes('Praktik')?'<span class="pill" style="color:#f5b546;border-color:rgba(245,181,70,.35)">BENGKEL</span>':'<span class="pill" style="color:#7dd3fc;border-color:rgba(125,211,252,.35)">TEORI</span>'}</td><td><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${m}">${m}</b></td><td><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${g}">${g}</div></td><td><span class="pill">${m.includes('Praktik')?'Lab RPL (R.Praktik)':'Ruang Teori (R.2)'}</span></td><td><span class="acts"><button>Edit</button><button class="d">Hapus</button></span></td></tr>`).join('');
+  const cards=rows.map(([m,g])=>`<div class="mc"><div class="t"><div><b>${m}</b><small>${g}</small></div><span class="pill">TEORI</span></div><div class="f"><span>Ruang Teori (R.2)</span><span class="acts"><button>Edit</button><button class="d">Hapus</button></span></div></div>`).join('');
+  return shell('jadwal','Jadwal Blok KBM Mingguan','Jadwal Pelajaran',`${tabs}
+  <div class="card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+   <button class="btn" onclick="jdGo(-1)">← Minggu Lalu</button>
+   <button class="btn ${jdw===18?'p':''}" onclick="jdSet(18)">Minggu Ini (Minggu 18)</button>
+   <button class="btn" onclick="jdGo(1)">Minggu Depan →</button>
+   <div class="dd"><button class="btn" onclick="ddToggle('jdw')">Minggu ${jdw} ▾</button><div class="ddm" id="dd-jdw">${[...Array(17)].map((_,k)=>k+2).map(x=>`<button class="${x===jdw?'on':''}" onclick="jdSet(${x})">Minggu ${x}</button>`).join('')}</div></div>
+   <input class="fld" style="flex:1 1 220px;width:auto;min-width:0;height:40px" placeholder="Cari guru / mapel...">
+   <button class="btn p jdadd">${ic('plus')} Tambah Jadwal</button>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+   <div style="padding:16px 18px;border-bottom:1px solid var(--line)"><h2 style="font-size:15px;margin:0">Daftar Mata Pelajaran — Minggu ke-${jdw}</h2><small style="color:var(--mu);font-size:12px">Menampilkan 4 mata pelajaran (sistem blok rolling harian)</small></div>
+   <div class="tw dt" style="border:0;border-radius:0"><table class="tbl" style="table-layout:fixed"><thead><tr><th style="width:56px">No</th><th style="width:120px">Tipe blok</th><th style="width:34%">Mata pelajaran</th><th style="width:26%">Guru pengampu</th><th style="width:170px">Ruangan</th><th style="width:130px">Aksi</th></tr></thead><tbody>${tr}</tbody></table></div>
+   <div class="mcards" style="padding:12px">${cards}</div>
+  </div>`);
+};
+P.kas=function(){
+  const w=kwk;
+  const cols=[w-2,w-1,w].filter(x=>x>=2);
+  const prevCols=cols.filter(c=>c!==w);
+  const ck=i=>{const on=kpGet(w,i)>=TRF;return `<button class="ck ${on?'on':''}" onclick="kpTap(${i})" aria-label="${on?'Batal tandai lunas':'Tandai lunas'}">${on?'<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px;stroke-width:3;color:#052e1f"><path d="M5 12l5 5 9-10"/></svg>':''}</button>`};
+  const st=(c,i)=>klib[c]?'<span class="pill">Libur</span>':kpGet(c,i)>=TRF?'<span class="pill ok">Lunas</span>':'<span class="pill wn">Belum</span>';
+  const lunas=siswa.filter((_,k)=>kpGet(w,k+1)>=TRF).length;
+  const tunggak=siswa.reduce((a,_,k)=>a+(klib[w]?0:kpOwe(w,k+1)),0);
+  const pct=Math.round(lunas/siswa.length*100);
+  const head=prevCols.map(c=>`<th style="text-align:right">Minggu ${c}</th>`).join('')+`<th style="text-align:right">Minggu ${w} (bayar)</th>`;
+  const rows=siswa.map(([n,nm],k)=>{const i=k+1;const cur=klib[w]?'<span class="pill">Libur</span>':ck(i);return `<tr><td class="mo" style="color:var(--mu)">${n}</td><td><b>${nm}</b>${kpOwe(w,i)>0&&!klib[w]?`<small style="color:#ff8a8d">Total kurang ${kpRp(kpOwe(w,i))}</small>`:''}</td>${prevCols.map(c=>`<td style="text-align:right">${st(c,i)}</td>`).join('')}<td style="text-align:right">${cur}</td></tr>`}).join('');
+  const cards=siswa.map(([n,nm],k)=>{const i=k+1;const on=kpGet(w,i)>=TRF;const owe=kpOwe(w,i);const col=klib[w]?'#8b93a7':on?'#3ecf8e':'#e5484d';const pv=w-1>=2?`<small style="display:block;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">Minggu ${w-1}: ${klib[w-1]?'Libur':kpGet(w-1,i)>=TRF?'Lunas':'Belum bayar'}</small>`:'';return `<div class="mc" style="border-left:4px solid ${col}"><div class="t" style="align-items:center"><div style="min-width:0"><b>${nm}</b><small style="display:block">Absen ${n}</small>${owe>0&&!klib[w]?`<small style="display:block;color:#ff8a8d">Total kurang ${kpRp(owe)}</small>`:''}</div>${klib[w]?'<span class="pill">Libur</span>':ck(i)}</div>${pv}</div>`}).join('');
+  return shell('kas','Kas Kelas','Kas',`
+  <div class="stats kas3">
+   <div class="card st"><small>Tarif per minggu</small><div class="n">${kpRp(TRF)}</div></div>
+   <div class="card st hi"><small>Minggu ${w} · lunas</small><div class="n">${lunas}<span style="font-size:14px;opacity:.8"> / ${siswa.length}</span></div><div class="d">${pct}% siswa sudah bayar</div></div>
+   <div class="card st"><small>Total kurang</small><div class="n">${kpRp(tunggak)}</div><div class="d">${klib[w]?'Minggu ini libur':'Termasuk minggu sebelumnya'}</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+   <div style="display:flex;gap:8px;align-items:center"><button class="btn" onclick="kwGo(-1)">←</button><div class="card" style="padding:8px 14px;font-weight:700">Minggu ${w}</div><button class="btn" onclick="kwGo(1)">→</button></div>
+   <button class="btn ${klib[w]?'p':''}" onclick="kpLib()">${klib[w]?'Batal libur':'Set libur'}</button>
+  </div>
+  <div class="tw dt"><table class="tbl"><thead><tr><th>Absen</th><th>Nama siswa</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="mcards">${cards}</div>`);
+};
+P.kas=function(){
+  const w=kwk;
+  const cols=[w-2,w-1,w].filter(x=>x>=2);
+  const prevCols=cols.filter(c=>c!==w);
+  const allWeeks=[...Array(w-1)].map((_,j)=>j+2);
+  const unpaid=i=>allWeeks.filter(x=>!klib[x]&&kpGet(x,i)<TRF);
+  const ck=i=>{const on=kpGet(w,i)>=TRF;return `<button class="ck ${on?'on':''}" onclick="kpTap(${i})" aria-label="${on?'Batal tandai lunas':'Tandai lunas'}">${on?'<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px;stroke-width:3;color:#052e1f"><path d="M5 12l5 5 9-10"/></svg>':''}</button>`};
+  const st=(c,i)=>klib[c]?'<span class="pill">Libur</span>':kpGet(c,i)>=TRF?'<span class="pill ok">Lunas</span>':`<span class="pill wn">Kurang ${kpRp(TRF)}</span>`;
+  const lunas=siswa.filter((_,k)=>kpGet(w,k+1)>=TRF).length;
+  const tunggak=siswa.reduce((a,_,k)=>a+(klib[w]?0:kpOwe(w,k+1)),0);
+  const pct=Math.round(lunas/siswa.length*100);
+  const daftar=i=>{const u=unpaid(i);return u.length?`Belum bayar: Minggu ${u.join(', ')}`:'Tidak ada tunggakan'};
+  const head=prevCols.map(c=>`<th style="text-align:right">Minggu ${c}</th>`).join('')+`<th style="text-align:right">Minggu ${w} (bayar)</th>`;
+  const rows=siswa.map(([n,nm],k)=>{const i=k+1;const owe=kpOwe(w,i);return `<tr><td class="mo" style="color:var(--mu)">${n}</td><td><b>${nm}</b><small style="display:block;color:${owe>0?'#ff8a8d':'var(--mu)'}">${daftar(i)} · Total ${kpRp(owe)}</small></td>${prevCols.map(c=>`<td style="text-align:right">${st(c,i)}</td>`).join('')}<td style="text-align:right">${klib[w]?'<span class="pill">Libur</span>':ck(i)}</td></tr>`}).join('');
+  const cards=siswa.map(([n,nm],k)=>{const i=k+1;const on=kpGet(w,i)>=TRF;const owe=kpOwe(w,i);const col=klib[w]?'#8b93a7':owe===0?'#3ecf8e':'#e5484d';return `<div class="mc" style="border-left:4px solid ${col}"><div class="t" style="align-items:center"><div style="min-width:0"><b>${nm}</b><small style="display:block">Absen ${n}</small><small style="display:block;color:${owe>0?'#ff8a8d':'var(--mu)'}">${daftar(i)}</small><small style="display:block;font-weight:700;color:${owe>0?'#ff8a8d':'#3ecf8e'}">Total kurang ${kpRp(owe)}</small></div>${klib[w]?'<span class="pill">Libur</span>':ck(i)}</div></div>`}).join('');
+  return shell('kas','Kas Kelas','Kas',`
+  <div class="stats kas3">
+   <div class="card st"><small>Tarif per minggu</small><div class="n">${kpRp(TRF)}</div></div>
+   <div class="card st hi"><small>Minggu ${w} · lunas</small><div class="n">${lunas}<span style="font-size:14px;opacity:.8"> / ${siswa.length}</span></div><div class="d">${pct}% siswa sudah bayar</div></div>
+   <div class="card st"><small>Total kurang</small><div class="n">${kpRp(tunggak)}</div><div class="d">Semua minggu yang belum dibayar</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+   <div style="display:flex;gap:8px;align-items:center"><button class="btn" onclick="kwGo(-1)">←</button><div class="card" style="padding:8px 14px;font-weight:700">Minggu ${w}</div><button class="btn" onclick="kwGo(1)">→</button></div>
+   <button class="btn ${klib[w]?'p':''}" onclick="kpLib()">${klib[w]?'Batal libur':'Set libur'}</button>
+  </div>
+  <div class="tw dt"><table class="tbl"><thead><tr><th>Absen</th><th>Nama siswa</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="mcards">${cards}</div>`);
+};
+P.kas=function(){
+  const w=kwk;
+  const latest=w===18;
+  const cols=[w-2,w-1,w].filter(x=>x>=2);
+  const prevCols=cols.filter(c=>c!==w);
+  const allWeeks=[...Array(w-1)].map((_,j)=>j+2);
+  const unpaid=i=>allWeeks.filter(x=>!klib[x]&&kpGet(x,i)<TRF);
+  const ck=i=>{const on=kpGet(w,i)>=TRF;return `<button class="ck ${on?'on':''}" onclick="kpTap(${i})" aria-label="${on?'Batal tandai lunas':'Tandai lunas'}">${on?'<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px;stroke-width:3;color:#052e1f"><path d="M5 12l5 5 9-10"/></svg>':''}</button>`};
+  const st=(c,i)=>klib[c]?'<span class="pill">Libur</span>':kpGet(c,i)>=TRF?'<span class="pill ok">Lunas</span>':`<span class="pill wn">Kurang ${kpRp(TRF)}</span>`;
+  const lunas=siswa.filter((_,k)=>kpGet(w,k+1)>=TRF).length;
+  const tunggak=siswa.reduce((a,_,k)=>a+(klib[w]?0:kpOwe(w,k+1)),0);
+  const kurangMinggu=siswa.reduce((a,_,k)=>a+(klib[w]?0:TRF-kpGet(w,k+1)),0);
+  const pct=Math.round(lunas/siswa.length*100);
+  const daftar=i=>{const u=unpaid(i);return u.length?`Belum bayar: Minggu ${u.join(', ')}`:'Tidak ada tunggakan'};
+  const head=prevCols.map(c=>`<th style="text-align:right">Minggu ${c}</th>`).join('')+`<th style="text-align:right">Minggu ${w} (bayar)</th>`;
+  const rows=siswa.map(([n,nm],k)=>{const i=k+1;const owe=kpOwe(w,i);const extra=latest?`<small style="display:block;color:${owe>0?'#ff8a8d':'var(--mu)'}">${daftar(i)} · Total ${kpRp(owe)}</small>`:'';return `<tr><td class="mo" style="color:var(--mu)">${n}</td><td><b>${nm}</b>${extra}</td>${prevCols.map(c=>`<td style="text-align:right">${st(c,i)}</td>`).join('')}<td style="text-align:right">${klib[w]?'<span class="pill">Libur</span>':ck(i)}</td></tr>`}).join('');
+  const cards=siswa.map(([n,nm],k)=>{const i=k+1;const owe=kpOwe(w,i);const ok=klib[w]?null:(latest?owe===0:kpGet(w,i)>=TRF);const col=ok===null?'#8b93a7':ok?'#3ecf8e':'#e5484d';const extra=latest?`<small style="display:block;color:${owe>0?'#ff8a8d':'var(--mu)'}">${daftar(i)}</small><small style="display:block;font-weight:700;color:${owe>0?'#ff8a8d':'#3ecf8e'}">Total kurang ${kpRp(owe)}</small>`:'';return `<div class="mc" style="border-left:4px solid ${col}"><div class="t" style="align-items:center"><div style="min-width:0"><b>${nm}</b><small style="display:block">Absen ${n}</small>${extra}</div>${klib[w]?'<span class="pill">Libur</span>':ck(i)}</div></div>`}).join('');
+  return shell('kas','Kas Kelas','Kas',`
+  <div class="stats kas3">
+   <div class="card st"><small>Tarif per minggu</small><div class="n">${kpRp(TRF)}</div></div>
+   <div class="card st hi"><small>Minggu ${w} · lunas</small><div class="n">${lunas}<span style="font-size:14px;opacity:.8"> / ${siswa.length}</span></div><div class="d">${pct}% siswa sudah bayar</div></div>
+   <div class="card st"><small>${latest?'Total kurang':'Kurang minggu ini'}</small><div class="n">${kpRp(latest?tunggak:kurangMinggu)}</div><div class="d">${latest?'Semua minggu yang belum dibayar':'Belum dibayar di minggu ini'}</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+   <div style="display:flex;gap:8px;align-items:center"><button class="btn" onclick="kwGo(-1)">←</button><div class="card" style="padding:8px 14px;font-weight:700">Minggu ${w}</div><button class="btn" onclick="kwGo(1)">→</button></div>
+   <button class="btn ${klib[w]?'p':''}" onclick="kpLib()">${klib[w]?'Batal libur':'Set libur'}</button>
+  </div>
+  <div class="tw dt"><table class="tbl"><thead><tr><th>Absen</th><th>Nama siswa</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="mcards">${cards}</div>`);
+};
+P.kas=function(){
+  const w=kwk;
+  const L=18;
+  const cols=[w-2,w-1,w].filter(x=>x>=2);
+  const prevCols=cols.filter(c=>c!==w);
+  const allWeeks=[...Array(L-1)].map((_,j)=>j+2);
+  const unpaid=i=>allWeeks.filter(x=>!klib[x]&&kpGet(x,i)<TRF);
+  const ck=i=>{const on=kpGet(w,i)>=TRF;return `<button class="ck ${on?'on':''}" onclick="kpTap(${i})" aria-label="${on?'Batal tandai lunas':'Tandai lunas'}">${on?'<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px;stroke-width:3;color:#052e1f"><path d="M5 12l5 5 9-10"/></svg>':''}</button>`};
+  const st=(c,i)=>klib[c]?'<span class="pill">Libur</span>':kpGet(c,i)>=TRF?'<span class="pill ok">Lunas</span>':`<span class="pill wn">Kurang ${kpRp(TRF)}</span>`;
+  const lunas=siswa.filter((_,k)=>kpGet(w,k+1)>=TRF).length;
+  const totalKurang=siswa.reduce((a,_,k)=>a+kpOwe(L,k+1),0);
+  const pct=Math.round(lunas/siswa.length*100);
+  const daftar=i=>{const u=unpaid(i);return u.length?`Belum bayar: Minggu ${u.join(', ')}`:'Tidak ada tunggakan'};
+  const head=prevCols.map(c=>`<th style="text-align:right">Minggu ${c}</th>`).join('')+`<th style="text-align:right">Minggu ${w} (bayar)</th>`;
+  const rows=siswa.map(([n,nm],k)=>{const i=k+1;const owe=kpOwe(L,i);return `<tr><td class="mo" style="color:var(--mu)">${n}</td><td><b>${nm}</b><small style="display:block;color:${owe>0?'#ff8a8d':'var(--mu)'}">${daftar(i)} · Total ${kpRp(owe)}</small></td>${prevCols.map(c=>`<td style="text-align:right">${st(c,i)}</td>`).join('')}<td style="text-align:right">${klib[w]?'<span class="pill">Libur</span>':ck(i)}</td></tr>`}).join('');
+  const cards=siswa.map(([n,nm],k)=>{const i=k+1;const owe=kpOwe(L,i);const ok=klib[w]?null:kpGet(w,i)>=TRF;const col=ok===null?'#8b93a7':ok?'#3ecf8e':'#e5484d';return `<div class="mc" style="border-left:4px solid ${col}"><div class="t" style="align-items:center"><div style="min-width:0"><b>${nm}</b><small style="display:block">Absen ${n}</small><small style="display:block;color:${owe>0?'#ff8a8d':'var(--mu)'}">${daftar(i)}</small><small style="display:block;font-weight:700;color:${owe>0?'#ff8a8d':'#3ecf8e'}">Total kurang ${kpRp(owe)}</small></div>${klib[w]?'<span class="pill">Libur</span>':ck(i)}</div></div>`}).join('');
+  return shell('kas','Kas Kelas','Kas',`
+  <div class="stats kas3">
+   <div class="card st"><small>Tarif per minggu</small><div class="n">${kpRp(TRF)}</div></div>
+   <div class="card st hi"><small>Minggu ${w} · lunas</small><div class="n">${lunas}<span style="font-size:14px;opacity:.8"> / ${siswa.length}</span></div><div class="d">${pct}% siswa sudah bayar</div></div>
+   <div class="card st"><small>Total kurang</small><div class="n">${kpRp(totalKurang)}</div><div class="d">Semua minggu yang belum dibayar</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+   <div style="display:flex;gap:8px;align-items:center"><button class="btn" onclick="kwGo(-1)">←</button><div class="card" style="padding:8px 14px;font-weight:700">Minggu ${w}</div><button class="btn" onclick="kwGo(1)">→</button></div>
+   <button class="btn ${klib[w]?'p':''}" onclick="kpLib()">${klib[w]?'Batal libur':'Set libur'}</button>
+  </div>
+  <div class="tw dt"><table class="tbl"><thead><tr><th>Absen</th><th>Nama siswa</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="mcards">${cards}</div>`);
+};
+P.kas=function(){
+  const w=kwk, L=18;
+  const cols=[w-2,w-1,w].filter(x=>x>=2);
+  const prevCols=cols.filter(c=>c!==w);
+  const allWeeks=[...Array(L-1)].map((_,j)=>j+2);
+  const unpaidWeeks=i=>allWeeks.filter(x=>!klib[x]&&kpGet(x,i)<TRF);
+  const ck=i=>{const on=kpGet(w,i)>=TRF;return `<button class="ck ${on?'on':''}" onclick="kpTapW(${w},${i})" aria-label="${on?'Batal tandai lunas':'Tandai lunas'}">${on?'<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px;stroke-width:3;color:#052e1f"><path d="M5 12l5 5 9-10"/></svg>':''}</button>`};
+  const chip=(x,i)=>`<button class="pill wn" onclick="kpTapW(${x},${i})" style="cursor:pointer;margin:2px 4px 2px 0">Minggu ${x} · ${kpRp(TRF)}</button>`;
+  const pcell=(c,i)=>klib[c]?'<span class="pill">Libur</span>':kpGet(c,i)>=TRF?`<button class="pill ok" onclick="kpTapW(${c},${i})" style="cursor:pointer">Lunas</button>`:`<button class="pill wn" onclick="kpTapW(${c},${i})" style="cursor:pointer">Kurang ${kpRp(TRF)}</button>`;
+  const lunas=siswa.filter((_,k)=>kpGet(w,k+1)>=TRF).length;
+  const totalKurang=siswa.reduce((a,_,k)=>a+kpOwe(L,k+1),0);
+  const pct=Math.round(lunas/siswa.length*100);
+  const head=prevCols.map(c=>`<th style="text-align:right">Minggu ${c}</th>`).join('')+`<th style="text-align:right">Minggu ${w} (bayar)</th>`;
+  const rows=siswa.map(([n,nm],k)=>{const i=k+1;const u=unpaidWeeks(i);const owe=kpOwe(L,i);return `<tr><td class="mo" style="color:var(--mu)">${n}</td><td><b>${nm}</b><div style="margin-top:6px">${u.length?u.map(x=>chip(x,i)).join(''):'<small>Tidak ada tunggakan</small>'}</div><small style="display:block;color:${owe>0?'#ff8a8d':'var(--mu)'}">Total kurang ${kpRp(owe)}</small></td>${prevCols.map(c=>`<td style="text-align:right">${pcell(c,i)}</td>`).join('')}<td style="text-align:right">${klib[w]?'<span class="pill">Libur</span>':ck(i)}</td></tr>`}).join('');
+  const cards=siswa.map(([n,nm],k)=>{const i=k+1;const u=unpaidWeeks(i);const owe=kpOwe(L,i);const ok=klib[w]?null:kpGet(w,i)>=TRF;const col=ok===null?'#8b93a7':ok?'#3ecf8e':'#e5484d';return `<div class="mc" style="border-left:4px solid ${col}"><div class="t" style="align-items:center"><div style="min-width:0"><b>${nm}</b><small style="display:block">Absen ${n}</small><div style="margin-top:6px">${u.length?u.map(x=>chip(x,i)).join(''):'<small>Tidak ada tunggakan</small>'}</div><small style="display:block;font-weight:700;margin-top:4px;color:${owe>0?'#ff8a8d':'#3ecf8e'}">Total kurang ${kpRp(owe)}</small></div>${klib[w]?'<span class="pill">Libur</span>':ck(i)}</div></div>`}).join('');
+  return shell('kas','Kas Kelas','Kas',`
+  <div class="stats kas3">
+   <div class="card st"><small>Tarif per minggu</small><div class="n">${kpRp(TRF)}</div></div>
+   <div class="card st hi"><small>Minggu ${w} · lunas</small><div class="n">${lunas}<span style="font-size:14px;opacity:.8"> / ${siswa.length}</span></div><div class="d">${pct}% siswa sudah bayar</div></div>
+   <div class="card st"><small>Total kurang</small><div class="n">${kpRp(totalKurang)}</div><div class="d">Semua minggu yang belum dibayar</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+   <div style="display:flex;gap:8px;align-items:center"><button class="btn" onclick="kwGo(-1)">←</button><div class="card" style="padding:8px 14px;font-weight:700">Minggu ${w}</div><button class="btn" onclick="kwGo(1)">→</button></div>
+   <button class="btn ${klib[w]?'p':''}" onclick="kpLib()">${klib[w]?'Batal libur':'Set libur'}</button>
+  </div>
+  <div class="tw dt"><table class="tbl"><thead><tr><th>Absen</th><th>Nama siswa</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="mcards">${cards}</div>`);
+};
+P.rekap=function(){
+  const w=kwk;
+  const MB=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  const HR=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  const tgl=x=>{const d=new Date(2026,9,28-(18-x)*7);return `${HR[d.getDay()]}, ${d.getDate()} ${MB[d.getMonth()]} ${d.getFullYear()}`};
+  const inc={};
+  for(let x=2;x<=18;x++){if(klib[x])continue;siswa.forEach(([n,nm],k)=>{const i=k+1;if(kpGet(x,i)>=TRF){const W=kinGet(x,i);if(W>w)return;(inc[W]=inc[W]||[]).push({n,nm,x})}})}
+  const entries=Object.keys(inc).map(Number).sort((a,b)=>b-a).map(W=>({x:W,paid:inc[W]}));
+  const masuk=entries.reduce((a,e)=>a+e.paid.length*TRF,0);
+  const periode=entries.filter(e=>e.x>w-4).reduce((a,e)=>a+e.paid.length*TRF,0);
+  const group=e=>{const jumlah=e.paid.length*TRF;const desc=e.paid.map(p=>`#${p.n} ${p.nm} (Mgg ${p.x})`).join(', ');return `<div class="card" style="margin-bottom:14px"><div class="ph"><div><h2 class="mo" style="font-size:14px;display:flex;gap:8px;align-items:center">${ic('cal')}${tgl(e.x)}</h2><small>Minggu ${e.x}</small></div><span class="pill ok">+${kpRp(jumlah)}</span></div><div class="row" style="margin:0"><div style="width:40px;height:40px;border-radius:12px;background:var(--acs);color:var(--ac);display:grid;place-items:center;flex:none">${ic('wallet')}</div><div style="min-width:0;flex:1"><b>Pemasukan Kas Siswa (${e.paid.length} pembayaran) <span class="pill" style="margin-left:4px">Otomatis Kas</span></b><small style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${desc}</small></div><div class="mo" style="font-weight:700;white-space:nowrap">+${kpRp(jumlah)}</div></div></div>`};
+  return shell('rekap','Buku Kas & Rekapitulasi Keuangan Kelas','Buku Kas',`
+  <div class="stats kas3">
+   <div class="card st hi"><small>Saldo kas saat ini <span class="pill" style="background:rgba(255,255,255,.2);color:#fff;border-color:transparent">Surplus</span></small><div class="n">${kpRp(masuk)}</div><div class="d">Total masuk ${kpRp(masuk)} · keluar Rp0</div></div>
+   <div class="card st"><small>Pemasukan periode ini <span class="pill">30 hari</span></small><div class="n">+${kpRp(periode)}</div><div class="d">Kas siswa &amp; pemasukan kelas</div></div>
+   <div class="card st"><small>Pengeluaran periode ini <span class="pill hi">30 hari</span></small><div class="n">-Rp0</div><div class="d">Arus kas bersih +${kpRp(periode)}</div></div>
+  </div>
+  <div class="card" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between;margin-bottom:14px">
+   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="lbl" style="padding:0">Periode</span><button class="btn">30 Hari (1 Bulan) ▾</button><span class="lbl" style="padding:0">Tampilan</span><button class="btn">Per Hari ▾</button></div>
+   <button class="btn p">${ic('plus')} Catat Transaksi</button>
+  </div>
+  ${entries.filter(e=>e.x>w-4).map(group).join('')}`);
+};
+P.kas=function(){
+  const w=kwk, L=18;
+  const ck=i=>{const on=kpGet(w,i)>=TRF;return `<button class="ck ${on?'on':''}" onclick="kpTapW(${w},${i})" aria-label="${on?'Batal tandai lunas':'Tandai lunas'}">${on?'<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px;stroke-width:3;color:#052e1f"><path d="M5 12l5 5 9-10"/></svg>':''}</button>`};
+  const lunas=siswa.filter((_,k)=>kpGet(w,k+1)>=TRF).length;
+  const totalKurang=siswa.reduce((a,_,k)=>a+kpOwe(L,k+1),0);
+  const pct=Math.round(lunas/siswa.length*100);
+  const rows=siswa.map(([n,nm],k)=>{const i=k+1;const owe=kpOwe(L,i);return `<tr><td class="mo" style="color:var(--mu)">${n}</td><td><b>${nm}</b><small style="display:block;color:${owe>0?'#ff8a8d':'var(--mu)'}">${owe>0?'Kurang '+kpRp(owe):'Lunas'}</small></td><td style="text-align:right">${klib[w]?'<span class="pill">Libur</span>':ck(i)}</td></tr>`}).join('');
+  const cards=siswa.map(([n,nm],k)=>{const i=k+1;const owe=kpOwe(L,i);const ok=klib[w]?null:kpGet(w,i)>=TRF;const col=ok===null?'#8b93a7':ok?'#3ecf8e':'#e5484d';return `<div class="mc" style="border-left:4px solid ${col}"><div class="t" style="align-items:center"><div style="min-width:0"><b>${nm}</b><small style="display:block">Absen ${n}</small><small style="display:block;font-weight:700;margin-top:4px;color:${owe>0?'#ff8a8d':'#3ecf8e'}">${owe>0?'Kurang '+kpRp(owe):'Lunas'}</small></div>${klib[w]?'<span class="pill">Libur</span>':ck(i)}</div></div>`}).join('');
+  return shell('kas','Kas Kelas','Kas',`
+  <div class="stats kas3">
+   <div class="card st"><small>Tarif per minggu</small><div class="n">${kpRp(TRF)}</div></div>
+   <div class="card st hi"><small>Minggu ${w} · lunas</small><div class="n">${lunas}<span style="font-size:14px;opacity:.8"> / ${siswa.length}</span></div><div class="d">${pct}% siswa sudah bayar</div></div>
+   <div class="card st"><small>Total kurang</small><div class="n">${kpRp(totalKurang)}</div><div class="d">Semua minggu yang belum dibayar</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+   <div style="display:flex;gap:8px;align-items:center"><button class="btn" onclick="kwGo(-1)">←</button><div class="card" style="padding:8px 14px;font-weight:700">Minggu ${w}</div><button class="btn" onclick="kwGo(1)">→</button></div>
+   <button class="btn ${klib[w]?'p':''}" onclick="kpLib()">${klib[w]?'Batal libur':'Set libur'}</button>
+  </div>
+  <div class="tw dt"><table class="tbl kasc"><thead><tr><th>Absen</th><th>Nama siswa</th><th style="text-align:right">Minggu ${w} (bayar)</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="mcards">${cards}</div>`);
+};
+let role=null;
+const ROLE_NAME={developer:'Developer',ketua:'Ketua',wakil:'Wakil Ketua',bendahara:'Bendahara',sekretaris:'Sekretaris'};
+const ROLE_LIST=Object.entries(ROLE_NAME);
+const ROLE_PAGES={
+  developer:['dashboard','siswa','jadwal','kas','rekap','tugas','admin','dev'],
+  ketua:['dashboard','siswa','jadwal','kas','rekap','tugas','admin'],
+  wakil:['dashboard','siswa','jadwal','kas','rekap','tugas','admin'],
+  bendahara:['dashboard','kas','rekap'],
+  sekretaris:['dashboard','siswa','jadwal','tugas','admin']
+};
+function canOpen(p){return ROLE_PAGES[role].includes(p)}
+function setRole(r){role=r;if(r!=='developer')kelasIdx=0;route()}
+P.akses=()=>shell('akses','Akses ditolak','Akses',`<div class="card"><b>Halaman ini tidak tersedia untuk peran ${ROLE_NAME[role]}</b><small style="display:block;margin-top:6px">Hubungi ketua kelas kalau kamu butuh akses.</small></div>`);
+let tugasList=[{t:'Laporan praktikum API',m:'Pemrograman Web',d:'2 hari lagi',s:'Mendesak'},{t:'Normalisasi tabel',m:'Basis Data',d:'4 hari lagi',s:'Berjalan'},{t:'Essay recount text',m:'Bahasa Inggris',d:'6 hari lagi',s:'Baru'}];
+let tugasForm=false;
+function tgToggle(){tugasForm=!tugasForm;route()}
+function tgSave(){const t=document.getElementById('tg-t').value.trim();const m=document.getElementById('tg-m').value.trim();const d=document.getElementById('tg-d').value.trim();if(!t){document.getElementById('tg-t').focus();return}tugasList.unshift({t,m:m||'Umum',d:d||'Belum ada tenggat',s:'Baru'});tugasForm=false;route()}
+function tgDel(i){tugasList.splice(i,1);route()}
+P.tugas=()=>shell('tugas','Tugas & PR','Tugas',`
+ <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap"><div class="chips" style="margin:0"><button class="on">Aktif · ${tugasList.length}</button><button>Riwayat</button></div><button class="btn p" onclick="tgToggle()">${ic('plus')} Tambah tugas</button></div>
+ ${tugasForm?`<div class="card" style="margin-bottom:14px"><div class="ph"><h2>Tugas baru</h2><button class="btn g" onclick="tgToggle()">Batal</button></div>
+  <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Judul tugas</label><input id="tg-t" class="fld" placeholder="Contoh: Laporan praktikum">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px"><div><label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Mapel</label><input id="tg-m" class="fld" placeholder="Pemrograman Web"></div><div><label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Tenggat</label><input id="tg-d" class="fld" placeholder="Contoh: Jumat, 13 Nov"></div></div>
+  <div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn p" onclick="tgSave()">Simpan tugas</button></div></div>`:''}
+ <div class="card">${tugasList.map((x,i)=>`<div class="row"><div style="min-width:0;flex:1"><b>${x.t}</b><small>${x.m} · ${x.d}</small></div><span class="pill ${x.s==='Mendesak'?'hi':x.s==='Baru'?'ok':''}">${x.s}</span><span class="acts"><button class="d" onclick="tgDel(${i})">Hapus</button></span></div>`).join('')||'<div class="sm" style="text-align:center;padding:20px">Belum ada tugas</div>'}</div>`);
+const ACC={'6285155054456':['developer','Rasyid'],'6281200000011':['ketua','Sambega'],'6281200000012':['wakil','Radin'],'6281200000013':['bendahara','Felly'],'6281200000014':['sekretaris','Lexsa']};
+function accOf(){return ACC[(document.getElementById('lwa').value||'').replace(/\D/g,'')]}
+function detectRole(){const a=accOf();const v=(document.getElementById('lwa').value||'').replace(/\D/g,'');document.getElementById('rdet').textContent=a?`Terdeteksi sebagai ${ROLE_NAME[a[0]]} (${a[1]})`:(v.length>=10?'Nomor belum terdaftar':'')}
+function doLogin(){const a=accOf();if(!a){document.getElementById('rdet').textContent='Nomor belum terdaftar';return}role=a[0];if(role!=='developer')kelasIdx=0;location.hash='dashboard';route()}
+function logout(){role=null;sheet(false);location.hash='login';route()}
+function auth(login){
+  document.getElementById('fl').classList.toggle('hide',!login);
+  document.getElementById('fr').classList.toggle('hide',login);
+  document.getElementById('t').textContent = login?'Selamat datang':'Daftar pengurus';
+  document.getElementById('s').textContent = login?'Masuk untuk mengelola kelas XI RPL C.':'Buat akun untuk mengelola kelas XI RPL C.';
+}
+function pw(){
+  const v=document.getElementById('np').value,c=document.getElementById('cp').value;
+  let s=0; if(v.length>=8)s++; if(/[a-z]/.test(v)&&/[A-Z]/.test(v))s++; if(/\d/.test(v))s++; if(/[^A-Za-z0-9]/.test(v)||v.length>=12)s++;
+  const col=['#e5484d','#f5b546','#3ecf8e','#3ecf8e'];
+  document.querySelectorAll('#mt span').forEach((b,i)=>b.style.background = v&&i<s ? col[Math.max(s,1)-1] : 'var(--line)');
+  document.getElementById('sl').textContent = v ? ['Lemah','Cukup','Kuat','Sangat kuat'][Math.max(s,1)-1] : 'Belum diisi';
+  const ok=c.length>0&&c===v;
+  document.getElementById('mc').textContent = c ? (ok?'Kata sandi cocok':'Kata sandi belum sama') : '';
+  document.getElementById('db').disabled = !(ok && v.length>=8);
+}
+function route(){
+  let id=(location.hash||'#login').slice(1);
+  if(!role)id='login';
+  if(id!=='login'&&!canOpen(id))id='akses';
+  sheet(false);
+  document.getElementById('app').innerHTML = (P[id]||P.login)();
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange',route);
+route();
+</script>
+</body>
+</html>

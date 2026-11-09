@@ -33,7 +33,7 @@ export function getRolePermissions(role) {
     can_edit_schedules: ['DEVELOPER', 'KETUA', 'SEKRETARIS'].includes(eff),
     can_edit_assignments: ['DEVELOPER', 'KETUA', 'SEKRETARIS'].includes(eff),
     can_edit_structure: ['DEVELOPER', 'KETUA', 'SEKRETARIS'].includes(eff),
-    menus: ['overview', 'students', 'schedules', 'assignments', 'structure', 'ai_tools']
+    menus: ['overview', 'students', 'schedules', 'assignments', 'structure']
   };
 
   if (permissions.can_view_cash) {

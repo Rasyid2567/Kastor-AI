@@ -1,70 +1,86 @@
-# Project: Kastor-AI Schedule Sync, Secret /limit Command & Deployment
+# Project: Kastor AI Web Dashboard Production Redesign (Varian B)
 
 ## Architecture
-- **Web Dashboard Backend (`web/src/routes.js`)**: Node/Deno HTTP server serving `/api/schedules/:id` and other REST endpoints backed by SQLite (`node:sqlite` / Deno SQLite).
-- **Web Dashboard Frontend (`web/public/app.js`)**: Vanilla JS SPA with responsive schedule table, deduplicating rolling block schedules for week views and triggering schedule modal edits.
-- **WhatsApp Bot Router (`bot/router.js`)**: Baileys-based message dispatcher routing incoming private messages and group commands, enforcing permissions, rate limiting, and menu isolation (`getHelpMenu()`).
-- **Bot Modules**:
-  - `bot/modules/schedule.js`: Queries and formats daily/weekly schedules (`getScheduleFull`, `getScheduleByDay`).
-  - `bot/modules/secret.js`: Handles secret commands (`/rvo`, `/ortu`, and the new `/limit` command), `isAuthorizedLimitUser()`, `formatLimitDuration()`, and `checkUserCooldown()`.
-  - `bot/modules/media.js`: Sticker creation and sticker rate limiting configuration (`bot_settings`).
-  - `bot/modules/downloader.js`: Video downloading (`/tt`, `/yt`, `/ig`, `/fb`).
-  - `bot/modules/ai.js`: AI assistant query dispatch.
-- **Database (`database/schema.js` & `database.sqlite`)**: SQLite database with WAL mode storing `schedules`, `bot_settings`, `classes`, `class_roles`, `web_users`, and `sticker_rate_limits`.
-- **Server Deployment (`talun`)**: Tailscale IP `100.78.4.35` / `192.168.1.20` hosting systemd services `kastor-ai` and `kastor-web` managed under Deno runtime.
+- **Web App Frontend (`web/public/app.js`, `web/public/styles.css`, `web/public/index.html`)**: Single Page Application (SPA) utilizing vanilla JavaScript and modular CSS.
+  - Varian B Dark Mint Theme (`#0a0f1c` bg, `#111827` surface, `#34d399` mint accent, `#1f2a3d` border, `#f1f5f9` text).
+  - Responsive Shell: Desktop (> 900px) 240px sticky sidebar, Mobile (<= 900px) fixed 5-slot bottom nav + "Lainnya" bottom sheet + floating action buttons (`.fab`) + mobile card engine (`.mc`).
+  - Accessibility & Touch: Minimum 44x44px touch targets (`--tap-min`), minimum 16px font-size on form controls to prevent iOS auto-zoom, and 4.5:1 text contrast.
+- **Backend API Server (`web/src/routes.js`, `web/src/rbac.js`, `web/server.js`)**: Native Node.js HTTP server exposing 38 REST endpoints backed by SQLite.
+  - Full RBAC enforcement: Developer (all), Ketua/Wakil (academic + read-only cash), Bendahara (cash mutations), Sekretaris (academic only, 403 on cash).
+  - Real-time role resolution via `resolveAuthoritativeRole(phone_number, group_id)`.
+- **Database Engine (`database/schema.js`, `database.sqlite`)**: SQLite in WAL mode.
+  - Single Source of Truth (SSOT) architecture: `students` table holds student records; `organization_structures` links `student_id` foreign key (`ON DELETE SET NULL`) while preserving backward-compatible denormalized `holder_name` and `phone_number` for WhatsApp bot commands.
+
+---
 
 ## Feature Inventory
 | # | Feature | Description | Milestone | Source |
 |---|---------|-------------|-----------|--------|
-| 1 | DB Pull from Server | Pull latest database from talun with WAL checkpoint before code modifications | M1 | ORIGINAL_REQUEST §R3 |
-| 2 | PUT /api/schedules/:id Block Sync | Synchronize Monday-Friday (day_index 1..5) on PUT block edit, preserving bell times and preventing duplicates | M1 | ORIGINAL_REQUEST §R1 |
-| 3 | Week 18 Schedule DB Update | Update Week 18 records to "Kejuruan RPL (Bengkel / Praktik)", "Guru Bengkel", "Lab RPL / Bengkel" | M1 | ORIGINAL_REQUEST §R1 |
-| 4 | Secret /limit Menu Isolation | Ensure /limit command is never displayed in /menu (excluded from getHelpMenu()) | M2 | ORIGINAL_REQUEST §R2 |
-| 5 | /limit Permission Authorization | Restrict /limit to Developer and Pengurus Otoritas, reject unauthorized callers | M2 | ORIGINAL_REQUEST §R2 |
-| 6 | /limit Subcommands & bot_settings Persistence | Implement /limit sticker, /limit ai, /limit tt, /limit status with persistent storage in bot_settings | M2 | ORIGINAL_REQUEST §R2 |
-| 7 | Seconds Input & Duration Display Formatter | Accept input in SECONDS; display formatted duration ("1m 30d", "2m", "45d", "0d") in status and cooldown messages | M2 | Follow-ups (14:01, 14:02, 14:03) |
-| 8 | Per-User Cooldown Enforcement | In-memory per-user cooldown tracking for AI, downloader, and sticker commands based on bot_settings | M2 | ORIGINAL_REQUEST §R2 |
-| 9 | 4-Tier E2E Test Suite | Build dedicated E2E test suite in test/e2e-limits-schedules.js and augment existing test runners | E2E-Track | ORIGINAL_REQUEST Acceptance Criteria |
-| 10 | Final E2E Test Pass & Adversarial Hardening | Pass 100% of E2E tests (Tiers 1-4) and adversarial stress test hardening (Tier 5) | M3 | Project Pattern Final Milestone |
-| 11 | Code Sync to Server & Service Restart | Rsync verified code to talun (excluding DB & baileys auth) and restart systemd services | M4 | ORIGINAL_REQUEST §R3 |
+| 1 | Varian B Design Tokens | Dark theme CSS tokens: mint `#34d399`, surface `#111827`, background `#0a0f1c`, border `#1f2a3d`, text `#f1f5f9`, on-mint `#052e1f`, soft mint `rgba(52,211,153,.12)` | M1 | redesign.md §Token warna |
+| 2 | 12 Legacy CSS Tokens | Preserve exact 12 legacy CSS variable declarations in `:root` to satisfy UI-05 test invariant | M1 | web-tests.js UI-05 |
+| 3 | Desktop Sticky Sidebar | Sticky 240px sidebar on viewports > 900px with brand, class context, navigation, and user card | M1 | redesign.md §Layout |
+| 4 | Mobile 5-Slot Bottom Nav | Fixed 64px bottom bar on viewports <= 900px with 5 items (Dashboard, Siswa, Jadwal, Kas, Lainnya) and bottom padding >= 96px | M1 | redesign.md §Layout |
+| 5 | "Lainnya" Bottom Sheet | Slide-up sheet dialog for slot 5 displaying remaining modules (Administrasi, AI, Dev Console, Logout) | M1 | redesign.md §Layout |
+| 6 | Touch Targets & iOS Zoom | Touch bounding boxes >= 44x44px; input font-size strictly >= 16px to prevent iOS auto-zoom; no text < 12px | M1 | redesign.md §Tipografi & §Aksesibilitas |
+| 7 | Dynamic Slot Flex Distribution | Bottom nav flexbox automatically redistributes remaining 4 slots to 25% width each when Kas slot is hidden for Sekretaris | M1 | challenger-m1-behavioral-stress.js RBAC-02 |
+| 8 | Class Roles SSOT DB Migration | Safe `ALTER TABLE organization_structures ADD COLUMN student_id INTEGER REFERENCES students(id) ON DELETE SET NULL` | M2 | redesign.md §Sumber data |
+| 9 | Student Search Component | Modal (desktop) and Bottom Sheet (mobile) to search students by name or NIS with instant results | M2 | redesign.md §Sumber data |
+| 10 | Single Active Role Constraint | Validate student does not hold multiple roles; display confirmation warning before role transfer | M2 | redesign.md §Sumber data |
+| 11 | SSOT Cascade Update on Edit | Updating student in Data Siswa automatically updates linked structure positions and role displays | M2 | redesign.md §Sumber data |
+| 12 | Role Clearing on Student Deletion | Deleting student clears their role, flags position as "Perlu diisi ulang", and revokes class role | M2 | redesign.md §Sumber data |
+| 13 | Dashboard Redesign | 4 summary cards (1 column on mobile), today's schedule rows, upcoming tasks with deadlines, holiday empty state | M3 | redesign.md §Dashboard |
+| 14 | Data Siswa Redesign | Sticky search bar, mobile cards (`.mc`), desktop table, floating add button (`.fab`), mass import in secondary action | M3 | redesign.md §Data Siswa |
+| 15 | Jadwal Pelajaran Redesign | Desktop block table, mobile day cards with scrollable day chips (`.chips`), week filter navigation | M3 | redesign.md §Jadwal Pelajaran |
+| 16 | Tugas & PR Redesign | Active and History tabs, deadline badges, submission progress indicator ("X dari Y sudah kumpul") | M3 | redesign.md §Tugas & PR |
+| 17 | Kas Kelas Redesign | Summary cards (fee, active week, treasurers), student list with Lunas/Menunggak, large mobile toggle button (`.ck`) | M3 | redesign.md §Kas Kelas |
+| 18 | Administrasi Kelas Redesign | Role cards with badges, mono WhatsApp announcement preview, mobile tab switcher (Form vs Preview) | M3 | redesign.md §Administrasi Kelas |
+| 19 | AI & Utilitas Redesign | Full-height chat container, pinned bottom input, scientific calculator tab panel | M3 | redesign.md §AI & Utilitas |
+| 20 | Developer Console Redesign | Developer-only guard, horizontal scrollable tables, big VPS stat cards, zero sensitive credential leaks | M3 | redesign.md §Developer Console |
+| 21 | Login & Registrasi Redesign | Centered 400px card, ambient radial gradient `#123c33`, 4-bar password strength meter, password confirm check | M3 | redesign.md §Login dan registrasi |
+| 22 | Automated Regression Suite | Pass 100% of `web/test/web-tests.js` (220/220) | M4 | ORIGINAL_REQUEST Acceptance Criteria |
+| 23 | Responsive E2E Suite | Pass 100% of `web/test/responsive-e2e.js` across both desktop (> 900px) and mobile (<= 900px) viewports | M4 | ORIGINAL_REQUEST Acceptance Criteria |
+| 24 | Challenger Stress Suites | Pass 100% of `web/test/challenger-m1-stress.js` and `web/test/challenger-m1-behavioral-stress.js` | M4 | ORIGINAL_REQUEST Acceptance Criteria |
+| 25 | Adversarial Hardening (Tier 5) | Comprehensive adversarial stress testing of edge cases, modal lifecycles, and viewport reflow | M5 | Project Pattern Final Milestone |
+
+---
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| E2E | E2E Testing Suite | Build 4-tier opaque-box E2E test runner (test/e2e-limits-schedules.js) & publish TEST_READY.md | none | IN_PROGRESS |
-| M1 | Schedule Sync & Week 18 DB Update | Pull DB from talun, fix PUT /api/schedules/:id block sync in web/src/routes.js, update Week 18 in database.sqlite | none | IN_PROGRESS |
-| M2 | Secret /limit & Rate Limiting | Implement /limit command, bot_settings persistence, formatLimitDuration, isAuthorizedLimitUser, and router cooldowns | none | IN_PROGRESS |
-| M3 | Final E2E Pass & Hardening | Verify 100% pass on Tiers 1-4 E2E tests, execute Tier 5 adversarial testing | E2E, M1, M2 | PLANNED |
-| M4 | Server Deployment & Restart | Rsync codebase to talun, restart kastor-ai & kastor-web, verify service health | M3 | PLANNED |
+| M1 | Design System & App Shell | Varian B tokens, 12 legacy tokens, sticky sidebar (>900px), bottom nav & sheet (<=900px), touch targets >=44px, inputs >=16px | none | IN_PROGRESS |
+| M2 | Class Roles Single Source of Truth | Safe DB migration, student search component, single-role constraint & confirmation, cascade updates & deletion clearing | M1 | PLANNED |
+| M3 | Module Redesign Coverage | Redesign all 9 modules (Dashboard, Siswa, Jadwal, Tugas, Kas, Administrasi, AI, Dev Console, Login/Registrasi) | M1, M2 | PLANNED |
+| M4 | Automated Verification & E2E Validation | Verify and pass `web-tests.js`, `responsive-e2e.js`, `challenger-m1-stress.js`, `challenger-m1-behavioral-stress.js` | M1, M2, M3 | PLANNED |
+| M5 | Adversarial Hardening & Final Gate | White-box adversarial testing, coverage audit, and final acceptance gate | M4 | PLANNED |
+
+---
 
 ## Interface Contracts
-### `web/src/routes.js` ↔ SQLite `schedules`
-- `PUT /api/schedules/:id`:
-  - Request Body: `{ week_number, day_index, block_type, subject_name, teacher_name, room_name, time_start, time_end, notes }`
-  - Effect: Updates record `:id` and atomically synchronizes days 1..5 for that `group_id` and `week_number` if `block_type === 'BENGKEL'`. Preserves standard bell start/end times per day.
-  - Response: `{ success: true, message: 'Jadwal berhasil diperbarui', count_synchronized: 5 }`
+### `web/public/styles.css` ↔ Test Suites
+- `:root`:
+  - Varian B Tokens: `--ac: #34d399;`, `--acs: rgba(52,211,153,.12);`, `--bg: #0a0f1c;`, `--s1: #111827;`, `--s2: #0b1322;`, `--s3: #151d30;`, `--line: #1f2a3d;`, `--tx: #f1f5f9;`, `--mu: #94a3b8;`, `--wn: #fbbf24;`, `--hi: #f87171;`
+  - 12 Legacy Tokens verbatim for `web-tests.js` UI-05: `--bg: #0B0D10;`, `--surface: #11151A;`, `--border: #1E232B;`, `--text: #E5E7EB;`, `--text-muted: #6B7280;`, `--primary: #3B82F6;`, `--primary-hover: #2563EB;`, `--accent: #10B981;`, `--warning: #F59E0B;`, `--danger: #EF4444;`, `--success: #10B981;`, `--radius: 8px;`
+- Responsive Breakpoints:
+  - `@media (max-width: 900px)` for visual Varian B bottom nav, mobile cards, FAB.
+  - `@media (max-width: 1023px)` for legacy test assertion invariant UI-06.
+- Typography & Touch:
+  - `.form-input, .form-select, .form-textarea, input, select, textarea { font-size: 16px; }`
+  - `.btn, .btn-icon-toggle, .auth-tab, .class-select { min-height: 44px; }`
 
-### `bot/modules/secret.js` ↔ `bot/router.js`
-- `formatLimitDuration(seconds: number): string`:
-  - `0` -> `'0d'`
-  - `45` -> `'45d'`
-  - `60` -> `'1m'`
-  - `90` -> `'1m 30d'`
-  - `120` -> `'2m'`
-- `isAuthorizedLimitUser(senderJid: string, groupId: string|null, devConfig: string): boolean`:
-  - Returns `true` if `senderJid` is developer, in `class_roles` (KETUA, SEKRETARIS, BENDAHARA), or in `web_users`.
-- `checkUserCooldown(type: 'sticker'|'ai'|'tt', userId: string): { allowed: boolean, remaining_seconds?: number, formatted_remaining?: string }`
-- `recordUserCooldown(type: 'sticker'|'ai'|'tt', userId: string): void`
-- `clearUserCooldown(type: 'sticker'|'ai'|'tt', userId: string): void`
-- `getBotLimitConfig(): { sticker: { enabled, window_seconds }, ai: { enabled, window_seconds }, tt: { enabled, window_seconds } }`
-- `updateBotLimitConfig(type: string, { enabled?: boolean, window_seconds?: number }): object`
-- `handleLimitCommand(sock, msg, remoteJid, senderJid, args, devNumber): Promise<void>`
+### `database/schema.js` & `web/src/routes.js` ↔ `organization_structures`
+- `ALTER TABLE organization_structures ADD COLUMN student_id INTEGER REFERENCES students(id) ON DELETE SET NULL;`
+- `GET /api/structure`: Returns structures joined with students (`s.name as student_name, s.nis, s.phone_number as student_phone`).
+- `POST /api/structure`: Accepts `{ position_name, student_id }` or `{ position_name, holder_name, phone_number, student_id }`. Synchronizes name and phone from `students` table.
+- `PUT /api/students/:id`: Cascades name and phone changes to `organization_structures` and `class_roles`.
+- `DELETE /api/students/:id`: Sets `student_id = NULL`, flags position as vacant ("Perlu diisi ulang").
+
+---
 
 ## Code Layout
-- `bot/router.js`: Routing for `/limit`, menu exclusion in `getHelpMenu()`, cooldown checks in `/ai`, `@mention`, `/tt`, `/yt`, `/ig`, `/fb`, `/s`.
-- `bot/modules/secret.js`: `handleLimitCommand`, `formatLimitDuration`, `isAuthorizedLimitUser`, cooldown tracker and `bot_settings` limit helpers.
-- `database/schema.js`: Seed defaults for `ai_limit_*` and `tt_limit_*` in `initDatabase()`.
-- `web/src/routes.js`: Synchronized block update in `PUT /api/schedules/:id`.
-- `test/e2e-limits-schedules.js`: Dedicated 4-tier E2E test runner.
-- `bot/test/run-tests.js`: TEST 13 unit tests for limit commands, permissions, and menu isolation.
-- `web/test/web-tests.js`: SKENARIO 15 unit tests for block schedule PUT synchronization.
+- `web/public/styles.css`: Varian B design tokens, App Shell layout (sidebar, bottom nav, sheet, scrim), component styling (cards, tables, buttons, inputs, pills).
+- `web/public/index.html`: Base DOM template, App Shell markup, modal containers, bottom navigation, bottom sheet.
+- `web/public/app.js`: Client-side logic for all 9 modules, student search component, role selection, modal controller, RBAC view filters.
+- `database/schema.js`: SQLite schema initialization and safe migration for `student_id`.
+- `web/src/routes.js`: Backend REST API handlers and SSOT cascade hooks.
+- `web/src/rbac.js`: Role-based access control rules.
+- `web/test/`: Test runners and suites (`web-tests.js`, `responsive-e2e.js`, `challenger-m1-stress.js`, `challenger-m1-behavioral-stress.js`).
